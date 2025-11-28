@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>ARCHIVIOB</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='white'/></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=1.0">
+    <script defer src="script.js?v=1.0"></script>
+    <style>
+        /* Critical CSS for immediate render */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Panel (Fixed) -->
+        <div class="left-panel">
+            <header>
+                <h1>ARCHIVIO B</h1>
+            </header>
+            <footer>
+                <div class="contact">
+                    <p><a href="mailto:eb@archiviob.xyz">eb@archiviob.xyz</a></p>
+                    <p><a href="tel:+39 393 7807053">+39 393 7807053</a></p>
+                </div>
+            </footer>
+        </div>
+
+        <!-- Right Panel (Scrollable) -->
+        <div class="right-panel">
+            <div id="gallery" class="gallery"></div>
+        </div>
+    </div>
+
+    <!-- Slideshow Modal -->
+    <div id="slideshow" class="slideshow">
+        <button class="close-btn" id="closeSlideshow">&times;</button>
+        <div class="slideshow-content">
+            <div class="click-zone-left" id="clickZoneLeft"></div>
+            <img id="slideshowImage" src="" alt="Slideshow">
+            <div class="click-zone-right" id="clickZoneRight"></div>
+        </div>
+    </div>
+</body>
+</html>
