@@ -1,0 +1,1500 @@
+/* ==========================================================================
+   COCOEX - Main Stylesheet
+   ========================================================================== */
+
+/* ==========================================================================
+   CSS Custom Properties (Variables)
+   ========================================================================== */
+:root {
+  /* Colors */
+  --color-black: #000;
+  --color-white: #fff;
+  --color-text-outline: #fff;
+
+  /* Typography - Canela font family */
+  --font-canela: 'canela', Georgia, serif;
+
+  /* Typography Scale */
+  --font-h1-size: 36px;
+  --font-h1-height: 38px;
+  --font-h1-weight: 700; /* Bold */
+
+  --font-h2-size: 18px;
+  --font-h2-height: 21px;
+  --font-h2-weight: 400; /* Regular */
+
+  /* Spacing */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 2rem;
+  --spacing-lg: 4rem;
+  --spacing-xl: 8rem;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease-out;
+  --transition-medium: 0.3s ease-out;
+  --transition-slow: 0.5s ease-out;
+
+  /* Z-index layers */
+  --z-background: 1;
+  --z-intro: 10;
+  --z-text-section: 20;
+  --z-white-section: 30;
+}
+
+/* ==========================================================================
+   Reset & Base Styles
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .comet-collab-bouncing-logo .comet-collab-logo-image {
+    animation: none !important;
+  }
+
+  .spark {
+    display: none !important;
+  }
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: var(--color-black);
+}
+
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-family: var(--font-canela);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ==========================================================================
+   Layout - Scroll Container
+   ========================================================================== */
+.scroll-container {
+  position: relative;
+}
+
+/* ==========================================================================
+   Intro Section
+   ========================================================================== */
+.intro-spacer {
+  height: 400vh;
+  position: relative;
+}
+
+.intro {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: var(--z-intro);
+  pointer-events: none;
+}
+
+.intro-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.intro-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Logo Container
+   ========================================================================== */
+.logo-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.intro-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity var(--transition-slow);
+}
+
+.intro-logo.visible {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   Orbiting Dots
+   ========================================================================== */
+.orbit-dot {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity var(--transition-slow);
+}
+
+.orbit-dot.visible {
+  opacity: 1;
+}
+
+.orbit-dot-white {
+  background: var(--color-white);
+  animation: pulseWhite 2s ease-in-out infinite;
+}
+
+.orbit-dot-black {
+  background: var(--color-black);
+  box-sizing: border-box;
+  animation: pulseBlack 2s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+@keyframes pulseWhite {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.3);
+    opacity: 0.8;
+  }
+}
+
+@keyframes pulseBlack {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.3);
+    opacity: 0.8;
+  }
+}
+
+/* ==========================================================================
+   Final Merged Dot
+   ========================================================================== */
+.final-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--color-white);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.final-dot.visible {
+  opacity: 1;
+  animation: pulseFinal 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseFinal {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+/* ==========================================================================
+   Constellation Canvas
+   ========================================================================== */
+.constellation-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Unified Starfield Background (Muse + Comet Sections)
+   ========================================================================== */
+.unified-starfield-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Text Section
+   ========================================================================== */
+.text-section-wrapper {
+  position: relative;
+  height: 350vh; /* Further reduced to end before comet-collab */
+}
+
+.text-section {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-text-section);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  padding: var(--spacing-lg);
+}
+
+.text-content {
+  max-width: 1000px;
+  width: 100%;
+}
+
+.reveal-text {
+  font-family: var(--font-canela);
+  font-weight: var(--font-h1-weight);
+  font-size: var(--font-h1-size);
+  line-height: var(--font-h1-height);
+  color: var(--color-white);
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.reveal-text em {
+  font-style: italic;
+  color: var(--color-black);
+  -webkit-text-stroke: 1px var(--color-text-outline);
+  text-stroke: 1px var(--color-text-outline);
+  transition: color 0.4s ease-out, text-shadow 0.4s ease-out;
+}
+
+.reveal-text em.highlight-active {
+  color: var(--color-white);
+  -webkit-text-stroke: 0;
+  text-stroke: 0;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 255, 255, 0.4);
+}
+
+/* ==========================================================================
+   White Section
+   ========================================================================== */
+.white-section {
+  position: relative;
+  z-index: var(--z-white-section);
+  min-height: 100vh;
+  background: transparent; /* Allow starfield to show through */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  margin: 0;
+}
+
+/* ==========================================================================
+   Comet Collab Wrapper - Creates Scroll Area
+   ========================================================================== */
+.comet-collab-wrapper {
+  position: relative;
+  width: 100%;
+  height: 400vh; /* 100vh intro + 200vh movement + 100vh fade = slideshow until page end */
+  background: transparent;
+}
+
+/* ==========================================================================
+   Comet Collab Intro Section
+   ========================================================================== */
+.comet-collab-intro {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl) var(--spacing-md);
+  z-index: 5;
+  opacity: 0;
+  will-change: opacity;
+  pointer-events: none; /* Allow scrolling through */
+  background: transparent;
+}
+
+
+.comet-collab-intro-logo {
+  position: absolute;
+  top: var(--spacing-xl);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.comet-collab-intro-logo img {
+  width: auto;
+  height: auto;
+  max-width: 182px;
+  max-height: 91px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.3));
+}
+
+.comet-collab-intro-content {
+  position: absolute;
+  bottom: var(--spacing-xl);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 600px;
+  padding: 0 var(--spacing-md);
+  text-align: center;
+}
+
+.comet-collab-intro-content p {
+  font-family: var(--font-canela);
+  font-size: var(--font-h2-size);
+  line-height: var(--font-h2-height);
+  font-weight: var(--font-h2-weight);
+  color: var(--color-white);
+  opacity: 0.9;
+}
+
+/* Comet Collab Slider Content - Sticky positioning */
+.comet-collab-slider-content {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 10;
+  opacity: 0; /* Start invisible, GSAP will fade in */
+  will-change: opacity;
+}
+
+/* Static Colored Logo at Bottom (for overlay with white logo) */
+.comet-collab-static-logo {
+  position: absolute;
+  bottom: var(--spacing-xl); /* Changed from top to bottom */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  opacity: 0; /* Start invisible, appears during overlay */
+  will-change: opacity;
+}
+
+.comet-collab-static-logo img {
+  width: auto;
+  height: auto;
+  max-width: 182px;
+  max-height: 91px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+}
+
+/* ==========================================================================
+   Comet Collab Slider Section
+   ========================================================================== */
+.comet-collab-section {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  max-height: 100vh;
+  background: transparent; /* Allow starfield to show through */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  z-index: 10;
+}
+
+
+/* Gradient overlay for slider section */
+.comet-collab-background-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  opacity: 0.85; /* Blend with starfield underneath */
+}
+
+/* Bouncing Logo */
+.comet-collab-bouncing-logo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  pointer-events: auto;
+  cursor: grab;
+  will-change: transform, opacity;
+  transition: opacity 0.6s ease;
+  opacity: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.comet-collab-bouncing-logo .comet-collab-logo-image {
+  width: auto;
+  height: auto;
+  max-width: 156px;
+  max-height: 78px;
+  object-fit: contain;
+  display: block;
+  animation: depth-pulse 3s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+@keyframes depth-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  }
+  50% {
+    transform: scale(1.2);
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
+  }
+}
+
+/* Spark particles */
+.spark {
+  position: fixed;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 49;
+  animation: spark-fade 0.6s ease-out forwards;
+}
+
+@keyframes spark-fade {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--spark-x), var(--spark-y)) scale(0.3);
+  }
+}
+
+.comet-collab-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  z-index: 2;
+}
+
+.comet-collab-content {
+  width: 100%;
+  max-width: 1600px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+  align-items: center;
+}
+
+/* Minimal Orbital Slider Navigation */
+.slider-nav {
+  position: absolute;
+  bottom: auto;
+  top: 60vh;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  z-index: 10;
+  padding: var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.slider-nav-btn {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+.slider-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.15);
+}
+
+.slider-nav-btn:active {
+  transform: scale(1.05);
+  transition: all 0.1s ease;
+}
+
+.slider-nav-btn::before {
+  content: '';
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-top: 2.5px solid rgba(0, 0, 0, 0.7);
+  border-right: 2.5px solid rgba(0, 0, 0, 0.7);
+  transition: all 0.3s ease;
+}
+
+.slider-nav-btn:hover::before {
+  border-color: rgba(0, 0, 0, 0.9);
+}
+
+.slider-nav-prev::before {
+  transform: rotate(-135deg);
+  left: 11px;
+}
+
+.slider-nav-next::before {
+  transform: rotate(45deg);
+  right: 11px;
+}
+
+.slider-dots {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 0 var(--spacing-sm);
+}
+
+.slider-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(8px);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+.slider-dot::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.slider-dot:hover {
+  transform: scale(1.3);
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.15);
+}
+
+.slider-dot:hover::before {
+  opacity: 0.8;
+  width: 6px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.slider-dot.active {
+  width: 16px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.5);
+  border-width: 2.5px;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5), 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+  animation: orbital-pulse 2.5s ease-in-out infinite;
+}
+
+.slider-dot.active::before {
+  width: 7px;
+  height: 7px;
+  background: rgba(0, 0, 0, 0.75);
+  opacity: 1;
+  animation: core-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes orbital-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes core-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 0.85;
+  }
+}
+
+/* Phase Reel Styles */
+.comet-collab-reel {
+  width: 100%;
+  height: 45vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phase-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+.phase-reel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.phase-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.phase-item.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.phase-item.exiting {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+/* Image Reel Specific */
+.comet-collab-reel-image .phase-item {
+  padding: var(--spacing-lg);
+}
+
+.phase-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.15));
+}
+
+/* Text Reel Specific */
+.comet-collab-reel-text .phase-item {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+}
+
+.comet-collab-reel-text h3 {
+  font-family: var(--font-canela);
+  font-size: var(--font-h1-size);
+  line-height: var(--font-h1-height);
+  font-weight: var(--font-h1-weight);
+  color: var(--color-black);
+  margin-bottom: var(--spacing-md);
+}
+
+.comet-collab-reel-text p {
+  font-family: var(--font-canela);
+  font-size: var(--font-h2-size);
+  line-height: var(--font-h2-height);
+  font-weight: var(--font-h2-weight);
+  color: var(--color-black);
+  opacity: 0.85;
+  max-width: 90%;
+}
+
+/* Responsive - Tablet */
+@media screen and (max-width: 1024px) {
+  .comet-collab-wrapper {
+    height: 900vh;
+  }
+
+  .comet-collab-intro-logo img {
+    max-width: 156px;
+    max-height: 78px;
+  }
+
+  .comet-collab-intro-content {
+    max-width: 580px;
+  }
+
+
+  .comet-collab-bouncing-logo .comet-collab-logo-image {
+    max-width: 130px;
+    max-height: 65px;
+    animation: depth-pulse 3.5s ease-in-out infinite;
+  }
+
+  .comet-collab-content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .comet-collab-container {
+    padding: var(--spacing-md);
+  }
+
+  .comet-collab-reel {
+    height: 40vh;
+  }
+
+}
+
+/* Responsive - Mobile */
+@media screen and (max-width: 768px) {
+  :root {
+    --spacing-lg: 1.5rem;
+    /* Responsive typography - Mobile */
+    --font-h1-size: 22px;
+    --font-h1-height: 26px;
+    --font-h2-size: 14px;
+    --font-h2-height: 17px;
+  }
+
+  .comet-collab-wrapper {
+    height: 900vh;
+  }
+
+  .comet-collab-intro-logo img {
+    max-width: 130px;
+    max-height: 65px;
+  }
+
+  .comet-collab-intro-content {
+    max-width: 500px;
+  }
+
+  .comet-collab-section {
+    min-height: 100vh;
+    max-height: 100vh;
+  }
+
+  .comet-collab-container {
+    padding: var(--spacing-sm);
+  }
+
+  .comet-collab-bouncing-logo .comet-collab-logo-image {
+    max-width: 104px;
+    max-height: 52px;
+    animation: depth-pulse 4s ease-in-out infinite;
+  }
+
+  .spark {
+    width: 4px;
+    height: 4px;
+  }
+
+  .slider-nav {
+    top: 55vh;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs);
+  }
+
+  .slider-nav-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .slider-nav-btn::before {
+    width: 7px;
+    height: 7px;
+    border-width: 2px;
+  }
+
+  .slider-nav-prev::before {
+    left: 10px;
+  }
+
+  .slider-nav-next::before {
+    right: 10px;
+  }
+
+  .slider-dot {
+    width: 9px;
+    height: 9px;
+    border-width: 1.5px;
+  }
+
+  .slider-dot::before {
+    width: 4px;
+    height: 4px;
+  }
+
+  .slider-dot.active {
+    width: 14px;
+    height: 14px;
+  }
+
+  .slider-dot.active::before {
+    width: 6px;
+    height: 6px;
+  }
+
+  .comet-collab-reel {
+    height: 35vh;
+  }
+
+}
+
+/* ==========================================================================
+   Social Links
+   ========================================================================== */
+.social-links {
+  position: fixed;
+  bottom: calc(var(--spacing-md) + 60px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--spacing-sm);
+  z-index: calc(var(--z-white-section) + 1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-medium);
+}
+
+.social-links.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  color: var(--color-black);
+  border-radius: 12px;
+  transition: color var(--transition-medium), transform var(--transition-medium), background-color var(--transition-medium);
+}
+
+.social-link:hover,
+.social-link:focus {
+  color: #555;
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: scale(1.05);
+}
+
+.social-link:focus {
+  outline: 2px solid var(--color-black);
+  outline-offset: 2px;
+}
+
+.social-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.footer-logo {
+  position: fixed;
+  bottom: var(--spacing-md);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 172px;
+  height: auto;
+  z-index: calc(var(--z-white-section) + 1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-medium);
+}
+
+.footer-logo.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ==========================================================================
+   Muse Section Wrapper - Creates Scroll Area
+   ========================================================================== */
+.muse-section-wrapper {
+  position: relative;
+  width: 100%;
+  height: 400vh; /* 200vh intro + 100vh fade + 100vh content */
+  background: transparent;
+}
+
+/* Muse Intro Page - Fixed position for overlay */
+.muse-intro-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl) var(--spacing-md);
+  z-index: 5;
+  opacity: 0;
+  will-change: opacity;
+  pointer-events: none; /* Allow scrolling through */
+}
+
+.muse-intro-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+.muse-intro-logo-image {
+  width: 300px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  filter: brightness(0) invert(1) drop-shadow(0 8px 16px rgba(255, 255, 255, 0.3));
+}
+
+.muse-intro-text {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-canela);
+  font-size: var(--font-h2-size);
+  line-height: var(--font-h2-height);
+  font-weight: var(--font-h2-weight);
+  color: var(--color-white);
+  opacity: 0.9;
+  max-width: 600px;
+  text-align: center;
+  padding: 0 var(--spacing-md);
+}
+
+/* White Section Content - Sticky positioning */
+.white-section-content {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  opacity: 0; /* Start invisible, GSAP will fade in */
+  will-change: opacity;
+}
+
+
+/* ==========================================================================
+   Muse Section - Orbiting Layout
+   ========================================================================== */
+.muse-section {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  background: transparent; /* Allow gradient + starfield to show through */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+/* Animated Background Canvas - Overlay on starfield */
+.muse-background-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  opacity: 0.9; /* Allow starfield to show through slightly */
+}
+
+/* Central Logo */
+.muse-center-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  opacity: 0; /* Start invisible, GSAP will fade in */
+  will-change: opacity, transform;
+}
+
+.muse-logo-image {
+  width: 300px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* Orbit Container - Fixed horizontal ellipse */
+.muse-orbit-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+}
+
+/* Orbiting Muse Items */
+.muse-orbit-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  will-change: transform;
+}
+
+/* Muse Image */
+.muse-orbit-item .muse-image {
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.muse-orbit-item .muse-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(1px 4px 1px rgba(0, 0, 0, 0.2));
+}
+
+/* Muse Text */
+.muse-orbit-item .muse-text {
+  text-align: center;
+  max-width: 200px;
+  padding: var(--spacing-xs);
+}
+
+.muse-orbit-item .muse-text h3 {
+  font-family: var(--font-canela);
+  font-size: var(--font-h2-size);
+  line-height: var(--font-h2-height);
+  font-weight: var(--font-h1-weight);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  margin-bottom: 0;
+  cursor: pointer;
+  transition: transform var(--transition-medium);
+  filter: drop-shadow(0 4px 1px rgba(0, 0, 0, 0.2));
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.3);
+  text-stroke: 0.5px rgba(0, 0, 0, 0.3);
+}
+
+.muse-orbit-item .muse-text h3:hover {
+  transform: scale(1.1);
+}
+
+.muse-orbit-item .muse-text p {
+  display: none;
+}
+
+/* ==========================================================================
+   Muse Popup Modal
+   ========================================================================== */
+.muse-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  /* GSAP handles transitions */
+}
+
+.muse-popup-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+}
+
+.muse-popup-content {
+  position: relative;
+  background: var(--color-white);
+  border-radius: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  z-index: 1001;
+  will-change: transform, opacity;
+  /* GSAP handles scale animation */
+}
+
+.muse-popup-close {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+  color: var(--color-black);
+}
+
+.muse-popup-close:hover,
+.muse-popup-close:focus {
+  background: rgba(0, 0, 0, 0.2);
+  transform: scale(1.1);
+}
+
+.muse-popup-close:focus {
+  outline: 2px solid var(--color-black);
+  outline-offset: 2px;
+}
+
+.muse-popup-body {
+  padding: var(--spacing-xl);
+}
+
+.muse-popup-title {
+  font-family: var(--font-canela);
+  font-size: var(--font-h1-size);
+  line-height: var(--font-h1-height);
+  font-weight: var(--font-h1-weight);
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  margin-bottom: var(--spacing-md);
+  will-change: opacity, transform;
+}
+
+.muse-popup-text {
+  font-family: var(--font-canela);
+  font-size: var(--font-h2-size);
+  line-height: var(--font-h2-height);
+  font-weight: var(--font-h2-weight);
+  color: var(--color-black);
+  will-change: opacity, transform;
+}
+
+/* ==========================================================================
+   Responsive Styles - Tablet
+   ========================================================================== */
+@media screen and (max-width: 1024px) {
+  :root {
+    --spacing-lg: 3rem;
+    /* Responsive typography - Tablet */
+    --font-h1-size: 30px;
+    --font-h1-height: 33px;
+    --font-h2-size: 16px;
+    --font-h2-height: 19px;
+  }
+
+  .text-content {
+    max-width: 800px;
+  }
+
+  /* Muse Section Tablet */
+  .muse-logo-image {
+    width: 250px;
+  }
+
+  .muse-orbit-item .muse-image {
+    width: 120px;
+    height: 120px;
+  }
+
+
+  /* Muse Intro Tablet */
+  .muse-intro-logo-image {
+    width: 250px;
+  }
+}
+
+/* ==========================================================================
+   Responsive Styles - Mobile
+   ========================================================================== */
+@media screen and (max-width: 768px) {
+  :root {
+    --spacing-lg: 1.5rem;
+  }
+
+  .orbit-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .text-section {
+    padding: var(--spacing-md);
+  }
+
+  .white-section {
+    padding: 0;
+  }
+
+  /* Muse Section Mobile */
+  .muse-logo-image {
+    width: 180px;
+  }
+
+  .muse-orbit-item .muse-image {
+    width: 80px;
+    height: 80px;
+  }
+
+  /* Popup Mobile */
+  .muse-popup-body {
+    padding: var(--spacing-lg);
+  }
+
+  .muse-popup-close {
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
+  }
+
+  .social-links {
+    gap: var(--spacing-xs);
+    bottom: calc(var(--spacing-sm) + 50px);
+  }
+
+  .social-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .footer-logo {
+    width: 150px;
+    bottom: var(--spacing-sm);
+  }
+
+  /* Muse Intro Mobile */
+  .muse-intro-logo-image {
+    width: 180px;
+  }
+}
+
+/* ==========================================================================
+   Responsive Styles - Small Mobile
+   ========================================================================== */
+@media screen and (max-width: 480px) {
+  :root {
+    /* Responsive typography - Small Mobile */
+    --font-h1-size: 18px;
+    --font-h1-height: 22px;
+    --font-h2-size: 12px;
+    --font-h2-height: 15px;
+  }
+
+  .text-section {
+    padding: var(--spacing-sm);
+  }
+
+  .social-links {
+    gap: var(--spacing-xs);
+  }
+
+  .social-link {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+  }
+
+  .social-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .footer-logo {
+    width: 130px;
+  }
+
+  .white-section {
+    padding: var(--spacing-sm);
+  }
+}
+
+/* ==========================================================================
+   Responsive Styles - Large Desktop
+   ========================================================================== */
+@media screen and (min-width: 1440px) {
+  :root {
+    /* Responsive typography - Large Desktop */
+    --font-h1-size: 42px;
+    --font-h1-height: 46px;
+    --font-h2-size: 20px;
+    --font-h2-height: 24px;
+  }
+
+  .text-content {
+    max-width: 1100px;
+  }
+}
+
+@media screen and (min-width: 1920px) {
+  :root {
+    /* Responsive typography - Extra Large Desktop */
+    --font-h1-size: 48px;
+    --font-h1-height: 52px;
+    --font-h2-size: 22px;
+    --font-h2-height: 26px;
+  }
+
+  .text-content {
+    max-width: 1300px;
+  }
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+@media print {
+  .intro,
+  .intro-spacer,
+  .constellation-canvas {
+    display: none !important;
+  }
+
+  .text-section {
+    position: static;
+    height: auto;
+    padding: 2cm;
+  }
+
+  .reveal-text {
+    color: var(--color-black);
+    filter: none !important;
+    opacity: 1 !important;
+  }
+
+  .reveal-text em {
+    -webkit-text-stroke: 0;
+    text-stroke: 0;
+    text-decoration: underline;
+  }
+}
