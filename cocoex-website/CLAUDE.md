@@ -21,11 +21,11 @@ Static portfolio website for cocoex - a vibrant DAO blending art, blockchain, co
 - Smooth fade to next sections
 
 **Section 3 - Muse Portfolio (`.muse-section-wrapper`)**
-- 400vh scroll wrapper (200vh intro hold + 100vh crossfade + 100vh content)
+- 300vh scroll wrapper (200vh intro hold + 100vh crossfade)
 - Black intro page with Muse logo (white inverted) + description text
 - Fades in when entering viewport (top 80% → 40%)
-- Holds for 2 scrolls, then crossfades out over 1 scroll
-- Orbiting layout: 7 muses in horizontal ellipse (240s rotation) - 1 scroll viewing time
+- Holds for 2 scrolls, then crossfades out over 1 scroll to reveal orbiting content
+- Orbiting layout: 7 muses in horizontal ellipse (240s continuous rotation)
 - Properly reverses when scrolling up (intro fades back in)
 - Each muse has unique color, interactive popup modal on click
 - Animated WebGL gradient background (muse colors)
@@ -159,8 +159,8 @@ When requesting changes, the most effective approach combines **visual descripti
 > "Adjust muse intro hold time"
 → Target: `SCROLL_TIMING.MUSE_INTRO_HOLD` (default: 200vh) - Note: Update MUSE_TOTAL and CSS accordingly
 
-> "Adjust muse content viewing time"
-→ Target: `SCROLL_TIMING.MUSE_CONTENT_HOLD` (default: 100vh)
+> "Adjust muse crossfade duration"
+→ Target: `SCROLL_TIMING.MUSE_CROSSFADE` (default: 100vh) - Transition from intro to orbiting content
 
 > "Change comet intro pause duration"
 → Target: `SCROLL_TIMING.COMET_INTRO_PAUSE` (default: 100vh)
@@ -337,7 +337,7 @@ Remove before adding. Question every element. White space is a feature. Less cod
 Centralized timing constants (`SCROLL_TIMING` object) define all scroll-based animations:
 - **Intro Section**: 400vh total (orbit + constellation explosion)
 - **Text Section**: 350vh with sequential word highlights
-- **Muse Section**: 400vh (200vh intro + 100vh crossfade + 100vh content)
+- **Muse Section**: 300vh (200vh intro hold + 100vh crossfade to orbiting content)
 - **Comet Section**: 400vh (100vh intro + 200vh logo/text movement + 100vh crossfade, then natural page end)
 
 All timing values are stored in constants for easy adjustment without cascading changes.
@@ -360,7 +360,7 @@ All timing values are stored in constants for easy adjustment without cascading 
 - **Safari**: Occasional `backdrop-filter` glitch on rapid scroll (slider nav)
 - **Chrome DevTools**: Open reduces WebGL performance by ~30%
 - **Touch devices**: Bouncing logo drag may conflict with scroll on some browsers
-- **Total scroll height**: ~2150vh (Intro: 400 + Text: 350 + Muse: 400 + Comet: 400 + natural page end with footer)
+- **Total scroll height**: ~2050vh (Intro: 400 + Text: 350 + Muse: 300 + Comet: 400 + natural page end with footer)
 
 ## Development Workflow
 

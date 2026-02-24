@@ -100,8 +100,8 @@
     // Muse section
     MUSE_INTRO_HOLD: 200,      // vh - hold intro before transition (2 full scrolls)
     MUSE_CROSSFADE: 100,       // vh - transition duration (1 full scroll)
-    MUSE_CONTENT_HOLD: 100,    // vh - time to view orbiting muses (1 full scroll)
-    MUSE_TOTAL: 400,           // vh - total wrapper height (200 intro + 100 fade + 100 content)
+    MUSE_CONTENT_HOLD: 0,      // vh - no additional hold (content visible during crossfade)
+    MUSE_TOTAL: 300,           // vh - total wrapper height (200 intro + 100 crossfade)
 
     // Comet section
     COMET_INTRO_PAUSE: 100,         // vh - hold intro static (1 full scroll)

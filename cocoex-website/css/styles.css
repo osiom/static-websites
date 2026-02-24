@@ -1003,7 +1003,7 @@ img {
 .muse-section-wrapper {
   position: relative;
   width: 100%;
-  height: 400vh; /* 200vh intro + 100vh fade + 100vh content */
+  height: 300vh; /* 200vh intro hold + 100vh crossfade */
   background: transparent;
 }
 
