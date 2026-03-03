@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="cocoex - A vibrant DAO blending art, blockchain, community and social impact. Cultivating a space where creators, artists, and collectors unite to inspire meaningful change.">
+  <meta name="description" content="cocoex e.V. - A vibrant DAO blending art, blockchain, community and social impact. Cultivating a space where creators, artists, and collectors unite to inspire meaningful change.">
   <meta name="theme-color" content="#000000">
-  <title>cocoex</title>
+  <title>cocoex e.V.</title>
   <link rel="icon" href="assets/images/logowhite.png" type="image/png">
   <!-- Adobe Fonts (Typekit) - Canela -->
-  <!-- TODO: Replace 'YOUR_KIT_ID' with actual Adobe Fonts project ID -->
-  <link rel="stylesheet" href="https://use.typekit.net/YOUR_KIT_ID.css">
+  <link rel="stylesheet" href="https://use.typekit.net/nvc8nhy.css">
   <link rel="stylesheet" href="css/styles.css?v=3.0">
   <!-- Open Graph / Social Meta Tags -->
   <meta property="og:type" content="website">
@@ -270,6 +269,9 @@
           </div>
           </div> <!-- End comet-collab-content -->
         </div> <!-- End comet-collab-container -->
+
+        <!-- Phase Transition Particles -->
+        <div class="phase-transition-particles" id="phase-transition-particles"></div>
       </section>
         </div> <!-- End comet-collab-slider-content -->
       </div> <!-- End comet-collab-wrapper -->
@@ -297,16 +299,21 @@
       <img src="assets/images/cocoex-text.png" alt="cocoex" class="footer-logo">
     </section>
 
-    <!-- Muse Popup Modal -->
+    <!-- Muse Popup Modal - Orbital Focus -->
     <div class="muse-popup" id="muse-popup">
       <div class="muse-popup-overlay" id="muse-popup-overlay"></div>
       <div class="muse-popup-content">
-        <button class="muse-popup-close" id="muse-popup-close" aria-label="Close popup">&times;</button>
+        <div class="muse-popup-image" id="muse-popup-image">
+          <img src="" alt="" id="muse-popup-img">
+        </div>
         <div class="muse-popup-body">
           <h2 class="muse-popup-title" id="muse-popup-title"></h2>
           <p class="muse-popup-text" id="muse-popup-text"></p>
         </div>
+        <button class="muse-popup-close" id="muse-popup-close" aria-label="Close popup (press Escape)"></button>
       </div>
+      <div class="muse-popup-particles" id="muse-popup-particles"></div>
+      <div class="muse-popup-hint">Click outside or press ESC to close</div>
     </div>
   </div>
 

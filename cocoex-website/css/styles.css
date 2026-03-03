@@ -3,6 +3,40 @@
    ========================================================================== */
 
 /* ==========================================================================
+   Scrollbar Styling - Minimal & Subtle
+   ========================================================================== */
+/* Minimal scrollbar for all browsers */
+* {
+  scrollbar-width: thin; /* Firefox - thin scrollbar */
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent; /* Firefox - thumb and track */
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+  width: 6px; /* Thin scrollbar width */
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent; /* Invisible track */
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15); /* Very subtle white thumb */
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3); /* Slightly more visible on hover */
+}
+
+/* Ensure body and html still scroll */
+html, body {
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+/* ==========================================================================
    CSS Custom Properties (Variables)
    ========================================================================== */
 :root {
@@ -124,6 +158,7 @@ img {
   height: 100%;
   z-index: var(--z-intro);
   pointer-events: none;
+  will-change: opacity;
 }
 
 .intro-canvas {
@@ -155,6 +190,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
+  will-change: transform, width, height;
 }
 
 .intro-logo {
@@ -177,6 +213,7 @@ img {
   border-radius: 50%;
   opacity: 0;
   transition: opacity var(--transition-slow);
+  will-change: transform, opacity;
 }
 
 .orbit-dot.visible {
@@ -256,6 +293,7 @@ img {
   width: 100%;
   height: 100%;
   pointer-events: none;
+  will-change: transform, opacity;
 }
 
 /* ==========================================================================
@@ -344,7 +382,7 @@ img {
 .comet-collab-wrapper {
   position: relative;
   width: 100%;
-  height: 400vh; /* 100vh intro + 200vh movement + 100vh fade = slideshow until page end */
+  height: 700vh; /* 80vh intro + 150vh movement + 120vh fade + 350vh phases (optimized pacing) */
   background: transparent;
 }
 
@@ -745,16 +783,71 @@ img {
   opacity: 0;
   transform: translateY(100%);
   transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .phase-item.active {
   opacity: 1;
   transform: translateY(0);
+  pointer-events: auto;
+  visibility: visible;
 }
 
 .phase-item.exiting {
   opacity: 0;
   transform: translateY(-100%);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* Parallax layers - images move slower than text */
+.comet-collab-reel-image .phase-item {
+  will-change: transform, opacity;
+}
+
+.comet-collab-reel-text .phase-item {
+  will-change: transform, opacity;
+}
+
+/* Phase transition particles */
+.phase-transition-particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9;
+  overflow: hidden;
+}
+
+.phase-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--particle-color, #fff);
+  box-shadow: 0 0 12px var(--particle-color, #fff);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+@keyframes burst-particle {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(var(--burst-x), var(--burst-y)) scale(0.3);
+    opacity: 0;
+  }
 }
 
 /* Image Reel Specific */
@@ -1003,7 +1096,7 @@ img {
 .muse-section-wrapper {
   position: relative;
   width: 100%;
-  height: 300vh; /* 200vh intro hold + 100vh crossfade */
+  height: 180vh; /* 100vh intro hold + 80vh crossfade (optimized for pacing) */
   background: transparent;
 }
 
@@ -1189,7 +1282,7 @@ img {
 }
 
 /* ==========================================================================
-   Muse Popup Modal
+   Muse Popup Modal - Orbital Focus Design
    ========================================================================== */
 .muse-popup {
   position: fixed;
@@ -1211,69 +1304,84 @@ img {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   cursor: pointer;
 }
 
 .muse-popup-content {
   position: relative;
-  background: var(--color-white);
-  border-radius: 24px;
-  max-width: 600px;
+  background: transparent;
+  max-width: 500px;
   width: 90%;
   max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: visible;
   z-index: 1001;
-  will-change: transform, opacity;
-  /* GSAP handles scale animation */
-}
-
-.muse-popup-close {
-  position: absolute;
-  top: var(--spacing-md);
-  right: var(--spacing-md);
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  font-size: 28px;
-  line-height: 1;
-  cursor: pointer;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  transition: background var(--transition-fast), transform var(--transition-fast);
-  color: var(--color-black);
+  gap: var(--spacing-lg);
+  will-change: transform, opacity;
+  /* No hard container - floats in space */
 }
 
-.muse-popup-close:hover,
-.muse-popup-close:focus {
-  background: rgba(0, 0, 0, 0.2);
-  transform: scale(1.1);
+/* Muse Image Container with Aura */
+.muse-popup-image {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  overflow: hidden;
+  will-change: transform, opacity;
 }
 
-.muse-popup-close:focus {
-  outline: 2px solid var(--color-black);
-  outline-offset: 2px;
+.muse-popup-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
+/* Color aura glow effect */
+.muse-popup-image::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  right: -20px;
+  bottom: -20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--muse-color, #fff) 0%, transparent 70%);
+  opacity: 0.3;
+  z-index: -1;
+  filter: blur(30px);
+  animation: pulse-aura 3s ease-in-out infinite;
+}
+
+@keyframes pulse-aura {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.05); }
+}
+
+/* Text content wrapper */
 .muse-popup-body {
-  padding: var(--spacing-xl);
+  text-align: center;
+  max-width: 400px;
+  padding: 0;
 }
 
 .muse-popup-title {
   font-family: var(--font-canela);
-  font-size: var(--font-h1-size);
-  line-height: var(--font-h1-height);
+  font-size: calc(var(--font-h1-size) * 1.2);
+  line-height: 1.1;
   font-weight: var(--font-h1-weight);
   text-transform: uppercase;
   letter-spacing: -0.03em;
   margin-bottom: var(--spacing-md);
+  color: var(--muse-color, #fff);
   will-change: opacity, transform;
+  /* Removed text-shadow glow for cleaner look */
 }
 
 .muse-popup-text {
@@ -1281,8 +1389,80 @@ img {
   font-size: var(--font-h2-size);
   line-height: var(--font-h2-height);
   font-weight: var(--font-h2-weight);
-  color: var(--color-black);
+  color: rgba(255, 255, 255, 0.9);
   will-change: opacity, transform;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Floating sparkle particles container */
+.muse-popup-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1002;
+  overflow: visible;
+}
+
+.muse-popup-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--muse-color, #fff);
+  box-shadow: 0 0 8px var(--muse-color, #fff);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: float-particle 4s ease-in-out infinite;
+}
+
+@keyframes float-particle {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(var(--particle-x), var(--particle-y)) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* Close button - hidden but accessible */
+.muse-popup-close {
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Hint text for closing */
+.muse-popup-hint {
+  position: absolute;
+  bottom: var(--spacing-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-canela);
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  pointer-events: none;
+  animation: fade-hint 2s ease-in-out infinite;
+}
+
+@keyframes fade-hint {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
 }
 
 /* ==========================================================================
@@ -1316,6 +1496,16 @@ img {
   /* Muse Intro Tablet */
   .muse-intro-logo-image {
     width: 250px;
+  }
+
+  /* Muse Popup Tablet */
+  .muse-popup-image {
+    width: 200px;
+    height: 200px;
+  }
+
+  .muse-popup-title {
+    font-size: calc(var(--font-h1-size) * 1.1);
   }
 }
 
@@ -1382,6 +1572,26 @@ img {
   .muse-intro-logo-image {
     width: 180px;
   }
+
+  /* Muse Popup Mobile */
+  .muse-popup-image {
+    width: 160px;
+    height: 160px;
+  }
+
+  .muse-popup-content {
+    max-width: 350px;
+    gap: var(--spacing-md);
+  }
+
+  .muse-popup-body {
+    max-width: 320px;
+  }
+
+  .muse-popup-hint {
+    font-size: 12px;
+    bottom: var(--spacing-md);
+  }
 }
 
 /* ==========================================================================
@@ -1421,6 +1631,24 @@ img {
 
   .white-section {
     padding: var(--spacing-sm);
+  }
+
+  /* Muse Popup Small Mobile */
+  .muse-popup-image {
+    width: 140px;
+    height: 140px;
+  }
+
+  .muse-popup-content {
+    max-width: 300px;
+  }
+
+  .muse-popup-title {
+    font-size: var(--font-h1-size);
+  }
+
+  .muse-popup-hint {
+    display: none; /* Hide on very small screens */
   }
 }
 

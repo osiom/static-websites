@@ -93,27 +93,27 @@
     INTRO_PHASE1_END: 0.40,    // 40% = 160vh - orbit animation
     INTRO_PHASE3_START: 0.40,  // 40% = 160vh - constellation explosion starts
 
-    // Text section word highlights
+    // Text section word highlights (optimized for fluidity)
     TEXT_HIGHLIGHT_START: 0.5,  // viewport offset to start first highlight
-    WORD_HIGHLIGHT_DURATION: 1, // viewports per word highlight
+    WORD_HIGHLIGHT_DURATIONS: [0.8, 1.0, 0.8], // vh per word (smoother pacing - total 2.6vh)
 
-    // Muse section
-    MUSE_INTRO_HOLD: 200,      // vh - hold intro before transition (2 full scrolls)
-    MUSE_CROSSFADE: 100,       // vh - transition duration (1 full scroll)
+    // Muse section (optimized for fluid transitions)
+    MUSE_INTRO_HOLD: 100,      // vh - hold intro before transition
+    MUSE_CROSSFADE: 80,        // vh - smooth crossfade
     MUSE_CONTENT_HOLD: 0,      // vh - no additional hold (content visible during crossfade)
-    MUSE_TOTAL: 300,           // vh - total wrapper height (200 intro + 100 crossfade)
+    MUSE_TOTAL: 180,           // vh - total wrapper height (100 intro + 80 crossfade)
 
-    // Comet section
-    COMET_INTRO_PAUSE: 100,         // vh - hold intro static (1 full scroll)
-    COMET_LOGO_MOVEMENT: 200,       // vh - logo descent + text up animation (2 full scrolls)
-    COMET_MOVEMENT_START: 100,      // vh - when movement begins (after intro pause)
-    COMET_CROSSFADE_START: 300,     // vh - when slider fades in (after intro + movement)
-    COMET_CROSSFADE_DURATION: 100,  // vh - crossfade duration (1 full scroll to fade)
-    COMET_STATIC_LOGO_START: 300,   // vh - when colored logo appears
-    COMET_STATIC_LOGO_HOLD: 0,      // vh - no hold
-    COMET_FADE_TO_BOUNCING: 0,      // vh - instant transition to bouncing
+    // Comet section (optimized for smooth scrolling experience)
+    COMET_INTRO_PAUSE: 80,          // vh - hold intro static
+    COMET_LOGO_MOVEMENT: 150,       // vh - logo descent + text up
+    COMET_MOVEMENT_START: 80,       // vh - when movement begins (after intro pause)
+    COMET_CROSSFADE_START: 230,     // vh - when slider fades in (80 + 150)
+    COMET_CROSSFADE_DURATION: 120,  // vh - crossfade duration
+    COMET_PHASE_DURATION: 70,       // vh - scroll distance per phase (optimized for responsiveness)
+    COMET_PHASES_START: 350,        // vh - when phase scrolling begins (after crossfade)
+    COMET_PHASE_COUNT: 5,           // number of phases
     COMET_CONTENT_HOLD: 0,          // vh - no fixed hold (natural page end)
-    COMET_TOTAL: 400                // vh - total wrapper height (100 intro + 200 movement + 100 fade)
+    COMET_TOTAL: 700                // vh - total wrapper height (80 intro + 150 movement + 120 fade + 350 phases)
   };
 
   // ==========================================================================
@@ -221,6 +221,7 @@
   let pulseValue = 0; // Big bang pulse effect (0 = no pulse, 0-1 = animating)
   let pulseTriggered = false; // Track if pulse has been triggered
   let constellationRotation = 0; // Z-axis rotation angle in radians
+  let masterRenderLoop = null; // Consolidated render loop reference
 
   // ==========================================================================
   // UTILITY FUNCTIONS
@@ -292,12 +293,11 @@
       vec2 uv = gl_FragCoord.xy / u_resolution.xy;
 
       // Base cosmic noise
+      // Optimized: reduced from 5 to 3 noise layers for better performance
       float noise1 = snoise(uv * 3.0 + u_time * 0.05);
       float noise2 = snoise(uv * 5.0 - u_time * 0.03 + 50.0);
       float noise3 = snoise(uv * 2.0 + u_time * 0.02 + 100.0);
-      float noise4 = snoise(uv * 8.0 + u_time * 0.06 + 200.0);
-      float noise5 = snoise(uv * 1.5 - u_time * 0.015 + 300.0);
-      float combined = (noise1 + noise2 * 0.6 + noise3 * 0.8 + noise4 * 0.25 + noise5 * 0.5) / 3.15;
+      float combined = (noise1 + noise2 * 0.6 + noise3 * 0.8) / 2.4;
       combined = combined * 0.5 + 0.5;
 
       float base = 0.003;
@@ -444,68 +444,71 @@
   }
 
   // ==========================================================================
-  // UPDATE POSITIONS BASED ON SCROLL
+  // UPDATE CONSTELLATION EXPLOSION (Phase 3)
   // ==========================================================================
-  function updatePositions() {
+  function updateConstellationExplosion(progress) {
     const w = window.innerWidth;
     const h = window.innerHeight;
     const centerX = w / 2;
     const centerY = h / 2;
-    const introScrollHeight = h * 4;
-    const currentScroll = window.scrollY;
-
-    // Responsive values
     const finalDotSize = getResponsiveValue(CONFIG.finalDotSize, CONFIG.finalDotSizeMobile);
 
-    // Intro progress
-    const introProgress = Math.min(1, currentScroll / introScrollHeight);
-    const overallProgress = introProgress;
+    // Hide orbit elements
+    elements.logoContainer.style.display = 'none';
+    elements.dotWhite.style.display = 'none';
+    elements.dotBlack.style.display = 'none';
+    elements.introLogo.style.opacity = 0;
+    elements.constCanvas.style.opacity = 1;
 
-    // PHASE 1: Orbit animations (handled by GSAP in updateOrbitPositions)
-    if (overallProgress <= CONFIG.phase1End) {
-      // Reset constellation state
-      phase2Started = false;
+    // Setup final dot size
+    elements.finalDot.style.width = finalDotSize + 'px';
+    elements.finalDot.style.height = finalDotSize + 'px';
 
-    // PHASE 3: Explosion into constellation
+    // Final dot fades out quickly at start
+    const explosionFadeEnd = 0.15;
+    if (progress < explosionFadeEnd) {
+      elements.finalDot.classList.add('visible');
+      elements.finalDot.style.opacity = 1 - (progress / explosionFadeEnd);
     } else {
-      const phase3Progress = (overallProgress - CONFIG.phase3Start) / (CONFIG.phase3End - CONFIG.phase3Start);
-
-      elements.logoContainer.style.display = 'none';
-      elements.dotWhite.style.display = 'none';
-      elements.dotBlack.style.display = 'none';
-      elements.introLogo.style.opacity = 0;
-      elements.constCanvas.style.opacity = 1;
-
-      elements.finalDot.style.width = finalDotSize + 'px';
-      elements.finalDot.style.height = finalDotSize + 'px';
-
-      const explosionFadeEnd = 0.15;
-      if (phase3Progress < explosionFadeEnd) {
-        elements.finalDot.classList.add('visible');
-        elements.finalDot.style.opacity = 1 - (phase3Progress / explosionFadeEnd);
-      } else {
-        elements.finalDot.style.opacity = 0;
-        elements.finalDot.classList.remove('visible');
-      }
-
-      if (!phase2Started) {
-        initFireworkDots();
-        phase2Started = true;
-
-        // Trigger the big bang pulse effect
-        if (!pulseTriggered) {
-          pulseValue = 0.01; // Start the pulse
-          pulseTriggered = true;
-        }
-      }
-
-      // Update constellation with GSAP-controlled rotation
-      updateFireworkDots(phase3Progress, centerX, centerY);
+      elements.finalDot.style.opacity = 0;
+      elements.finalDot.classList.remove('visible');
     }
 
-    // Reset pulse trigger when scrolling back to before phase 3
+    // Initialize firework dots on first call
+    if (!phase2Started) {
+      initFireworkDots();
+      phase2Started = true;
+
+      // Trigger the big bang pulse effect
+      if (!pulseTriggered) {
+        pulseValue = 0.01; // Start the pulse
+        pulseTriggered = true;
+      }
+    }
+
+    // Update constellation animation
+    updateFireworkDots(progress, centerX, centerY);
+  }
+
+  // ==========================================================================
+  // UPDATE POSITIONS BASED ON SCROLL (Legacy - kept for compatibility)
+  // ==========================================================================
+  function updatePositions(scrollTrigger) {
+    // This function is now mostly handled by GSAP animations
+    // Phase 1: updateOrbitPositions() called by GSAP
+    // Phase 3: updateConstellationExplosion() called by GSAP
+
+    // Reset pulse trigger when scrolling back
+    const currentScroll = window.scrollY;
+    const introScrollHeight = window.innerHeight * 4;
+    const overallProgress = Math.min(1, currentScroll / introScrollHeight);
+
     if (overallProgress < CONFIG.phase3Start && pulseTriggered) {
       pulseTriggered = false;
+    }
+
+    if (overallProgress < CONFIG.phase1End && phase2Started) {
+      phase2Started = false;
     }
   }
 
@@ -661,9 +664,9 @@
   }
 
   // ==========================================================================
-  // MAIN RENDER LOOP
+  // MASTER RENDER LOOP (CONSOLIDATED)
   // ==========================================================================
-  function render() {
+  function masterRender() {
     const time = (Date.now() - startTime) / 1000;
 
     // Animate pulse if active
@@ -674,8 +677,8 @@
       }
     }
 
-    // Render WebGL background
-    if (gl) {
+    // Render intro WebGL background
+    if (gl && program) {
       gl.useProgram(program);
       gl.enableVertexAttribArray(posAttr);
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -686,15 +689,41 @@
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
-    // Continuously update constellation if in phase 3
-    const h = window.innerHeight;
-    const introScrollHeight = h * 4;
-    const introProgress = Math.min(1, window.scrollY / introScrollHeight);
-    if (introProgress > CONFIG.phase3Start) {
-      updatePositions();
+    // Render Muse background
+    if (MuseBackground.gl && MuseBackground.program) {
+      MuseBackground.gl.useProgram(MuseBackground.program);
+      MuseBackground.gl.uniform2f(MuseBackground.resUniform, MuseBackground.canvas.width, MuseBackground.canvas.height);
+      MuseBackground.gl.uniform1f(MuseBackground.timeUniform, time);
+      MuseBackground.gl.drawArrays(MuseBackground.gl.TRIANGLES, 0, 6);
     }
 
-    requestAnimationFrame(render);
+    // Render Unified Starfield
+    if (UnifiedStarfield.gl && UnifiedStarfield.program) {
+      UnifiedStarfield.gl.useProgram(UnifiedStarfield.program);
+      UnifiedStarfield.gl.uniform2f(UnifiedStarfield.resUniform, UnifiedStarfield.canvas.width, UnifiedStarfield.canvas.height);
+      UnifiedStarfield.gl.uniform1f(UnifiedStarfield.timeUniform, time);
+      UnifiedStarfield.gl.drawArrays(UnifiedStarfield.gl.TRIANGLES, 0, 6);
+    }
+
+    // Render Comet background
+    if (CometCollabBackground.gl && CometCollabBackground.program) {
+      CometCollabBackground.gl.useProgram(CometCollabBackground.program);
+      CometCollabBackground.gl.uniform2f(CometCollabBackground.resUniform, CometCollabBackground.canvas.width, CometCollabBackground.canvas.height);
+      CometCollabBackground.gl.uniform1f(CometCollabBackground.timeUniform, time);
+      CometCollabBackground.gl.drawArrays(CometCollabBackground.gl.TRIANGLES, 0, 6);
+    }
+
+    // Update Muse orbit positions
+    if (MuseScroll.isInitialized) {
+      MuseScroll.updateOrbitPositions();
+    }
+
+    // Update bouncing logo if active
+    if (CometCollabSlider.isBouncingActive && !CometCollabSlider.isDragging) {
+      CometCollabSlider.updateLogoPosition();
+    }
+
+    masterRenderLoop = requestAnimationFrame(masterRender);
   }
 
   // ==========================================================================
@@ -706,11 +735,11 @@
       trigger: '.scroll-container',
       start: 'top top',
       end: 'bottom bottom',
-      onUpdate: () => updatePositions(),
+      onUpdate: (self) => updatePositions(self),
       invalidateOnRefresh: true,
     });
 
-    // Consolidated resize handler with debouncing
+    // Consolidated resize handler with debouncing (optimized to 150ms for stability)
     const handleResize = debounce(() => {
       resize();
       MuseScroll.handleResize();
@@ -740,7 +769,7 @@
     const textSectionTop = introScrollHeight;
 
     // Phase 1: Orbit animations using GSAP
-    const orbitState = { 
+    const orbitState = {
       progress: 0,
       logoSize: CONFIG.logoMinSize,
       rotation: CONFIG.totalRotations * 360
@@ -763,6 +792,23 @@
       }
     });
 
+    // Phase 3: Constellation explosion animation
+    const phase3State = { progress: 0 };
+    gsap.to(phase3State, {
+      progress: 1,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.scroll-container',
+        start: () => `top+=${introScrollHeight * CONFIG.phase3Start}px top`,
+        end: () => `top+=${introScrollHeight * CONFIG.phase3End}px top`,
+        scrub: true,
+        invalidateOnRefresh: true,
+        onUpdate: () => {
+          updateConstellationExplosion(phase3State.progress);
+        }
+      }
+    });
+
     // Text reveal (cleaner, no blur)
     gsap.timeline({
       scrollTrigger: {
@@ -778,52 +824,72 @@
       { opacity: 1, ease: 'none' }
     );
 
-    // Word highlights - individual ScrollTriggers for each word
-    elements.highlightWords.forEach((word, index) => {
-      const wordNum = parseInt(word.getAttribute('data-highlight'));
-      const highlightStartOffset = h * 0.5;
-      const startScroll = textSectionTop + highlightStartOffset + (wordNum - 1) * h;
-      
-      ScrollTrigger.create({
+    // Word highlights - batched into single timeline with variable durations
+    const totalDuration = SCROLL_TIMING.WORD_HIGHLIGHT_DURATIONS.reduce((sum, d) => sum + d, 0);
+
+    const highlightTimeline = gsap.timeline({
+      scrollTrigger: {
         trigger: '.scroll-container',
-        start: () => `top+=${startScroll}px top`,
-        end: () => `top+=${startScroll + h}px top`,
+        start: () => `top+=${textSectionTop + h * 0.5}px top`,
+        end: () => `top+=${textSectionTop + h * 0.5 + h * totalDuration}px top`,
+        scrub: true,
         invalidateOnRefresh: true,
-        onEnter: () => {
-          currentHighlight = wordNum;
-          word.classList.add('highlight-active');
-        },
-        onLeave: () => {
-          word.classList.remove('highlight-active');
-        },
-        onEnterBack: () => {
-          currentHighlight = wordNum;
-          word.classList.add('highlight-active');
-        },
-        onLeaveBack: () => {
-          if (wordNum === 1) currentHighlight = 0;
-          word.classList.remove('highlight-active');
-        }
-      });
+        anticipatePin: 1, // Smooth scroll buffering
+      }
     });
 
-    // Constellation rotation during word highlights
-    gsap.fromTo({ value: 0 },
-      { value: 0 },
-      {
-        value: Math.PI * 0.15,
-        scrollTrigger: {
-          trigger: '.text-section-wrapper',
-          start: () => `top+=${h * 0.5}px top`,
-          end: () => `top+=${h * 0.5 + h * 3}px top`,
-          scrub: true,
-          invalidateOnRefresh: true,
-          onUpdate: (self) => {
-            constellationRotation = self.progress * Math.PI * 0.15;
-          }
+    // Calculate cumulative scroll positions for each word (normalized 0-1)
+    let cumulativeProgress = 0;
+    elements.highlightWords.forEach((word, index) => {
+      const wordNum = parseInt(word.getAttribute('data-highlight'));
+      const duration = SCROLL_TIMING.WORD_HIGHLIGHT_DURATIONS[wordNum - 1] || 1;
+      const normalizedDuration = duration / totalDuration; // Convert to 0-1 range
+
+      // Add label for this word's start
+      highlightTimeline.addLabel(`word${wordNum}Start`, cumulativeProgress);
+
+      // Fade in highlight
+      highlightTimeline.to(word, {
+        onStart: () => {
+          currentHighlight = wordNum;
+          word.classList.add('highlight-active');
+        },
+        duration: 0.01,
+      }, cumulativeProgress);
+
+      // Hold highlight
+      highlightTimeline.to({}, { duration: normalizedDuration - 0.02 }, cumulativeProgress + 0.01);
+
+      // Fade out highlight
+      highlightTimeline.to(word, {
+        onComplete: () => {
+          word.classList.remove('highlight-active');
+          if (wordNum === elements.highlightWords.length) currentHighlight = 0;
+        },
+        duration: 0.01,
+      }, cumulativeProgress + normalizedDuration - 0.01);
+
+      cumulativeProgress += normalizedDuration;
+    });
+
+    // Constellation rotation during word highlights (optimized with CSS transform)
+    gsap.to(elements.constCanvas, {
+      rotation: 8.6, // 15 degrees in rotation units (Math.PI * 0.15 * 180 / Math.PI ≈ 8.6 degrees)
+      transformOrigin: 'center center',
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.text-section-wrapper',
+        start: () => `top+=${h * 0.5}px top`,
+        end: () => `top+=${h * 0.5 + h * totalDuration}px top`,
+        scrub: true,
+        invalidateOnRefresh: true,
+        anticipatePin: 1,
+        onUpdate: (self) => {
+          // Still track rotation value for potential future use
+          constellationRotation = self.progress * Math.PI * 0.15;
         }
       }
-    );
+    });
 
     // Footer reveal at end of scroll (only at very bottom of page)
     const socialLinks = document.querySelector('.social-links');
@@ -833,6 +899,7 @@
       trigger: '.comet-collab-section',
       start: 'bottom-=20% bottom',
       invalidateOnRefresh: true,
+      anticipatePin: 1,
       onEnter: () => {
         socialLinks?.classList.add('visible');
         footerLogo?.classList.add('visible');
@@ -867,6 +934,7 @@
             end: 'top 40%',
             scrub: true,
             invalidateOnRefresh: true,
+            anticipatePin: 1,
           }
         }
       );
@@ -879,6 +947,7 @@
           end: `top+=${museCrossfadeEnd}vh top`,
           scrub: true,
           invalidateOnRefresh: true,
+          anticipatePin: 1,
         }
       })
       // Fade out intro logo and text
@@ -926,6 +995,7 @@
             end: 'top 60%',
             scrub: true,
             invalidateOnRefresh: true,
+            anticipatePin: 1,
           }
         }
       );
@@ -941,6 +1011,7 @@
             end: 'top 40%',
             scrub: true,
             invalidateOnRefresh: true,
+            anticipatePin: 1,
           }
         }
       );
@@ -956,6 +1027,7 @@
             end: `top+=${SCROLL_TIMING.COMET_MOVEMENT_START + SCROLL_TIMING.COMET_LOGO_MOVEMENT}vh top`,
             scrub: true,
             invalidateOnRefresh: true,
+            anticipatePin: 1,
           }
         }
       );
@@ -971,6 +1043,7 @@
             end: `top+=${SCROLL_TIMING.COMET_MOVEMENT_START + SCROLL_TIMING.COMET_LOGO_MOVEMENT}vh top`,
             scrub: true,
             invalidateOnRefresh: true,
+            anticipatePin: 1,
           }
         }
       );
@@ -986,6 +1059,7 @@
           end: `top+=${cometCrossfadeEnd}vh top`,
           scrub: true,
           invalidateOnRefresh: true,
+          anticipatePin: 1,
         }
       })
       // Fade out intro page
@@ -1096,9 +1170,7 @@
 
       this.resize();
       this.initShaders();
-      this.render();
-
-      // Resize handled by global handler
+      // Render handled by master loop
     },
 
     resize() {
@@ -1209,23 +1281,10 @@
       this.gl.shaderSource(shader, source);
       this.gl.compileShader(shader);
       if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-        console.error('Shader error:', this.gl.getShaderInfoLog(shader));
+        console.error('Muse shader error:', this.gl.getShaderInfoLog(shader));
         return null;
       }
       return shader;
-    },
-
-    render() {
-      if (!this.gl || !this.program) return;
-
-      const time = (Date.now() - this.startTime) / 1000;
-
-      this.gl.useProgram(this.program);
-      this.gl.uniform2f(this.resUniform, this.canvas.width, this.canvas.height);
-      this.gl.uniform1f(this.timeUniform, time);
-      this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-
-      requestAnimationFrame(() => this.render());
     }
   };
 
@@ -1247,7 +1306,7 @@
 
       this.resize();
       this.initShaders();
-      this.render();
+      // Render handled by master loop
     },
 
     resize() {
@@ -1317,23 +1376,10 @@
       this.gl.shaderSource(shader, source);
       this.gl.compileShader(shader);
       if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-        console.error('Shader error:', this.gl.getShaderInfoLog(shader));
+        console.error('Starfield shader error:', this.gl.getShaderInfoLog(shader));
         return null;
       }
       return shader;
-    },
-
-    render() {
-      if (!this.gl || !this.program) return;
-
-      const time = (Date.now() - this.startTime) / 1000;
-
-      this.gl.useProgram(this.program);
-      this.gl.uniform2f(this.resUniform, this.canvas.width, this.canvas.height);
-      this.gl.uniform1f(this.timeUniform, time);
-      this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-
-      requestAnimationFrame(() => this.render());
     }
   };
 
@@ -1355,7 +1401,7 @@
 
       this.resize();
       this.initShaders();
-      this.render();
+      // Render handled by master loop
     },
 
     resize() {
@@ -1462,59 +1508,54 @@
       this.gl.shaderSource(shader, source);
       this.gl.compileShader(shader);
       if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-        console.error('Shader error:', this.gl.getShaderInfoLog(shader));
+        console.error('Comet shader error:', this.gl.getShaderInfoLog(shader));
         return null;
       }
       return shader;
-    },
-
-    render() {
-      if (!this.gl || !this.program) return;
-
-      const time = (Date.now() - this.startTime) / 1000;
-
-      this.gl.useProgram(this.program);
-      this.gl.uniform2f(this.resUniform, this.canvas.width, this.canvas.height);
-      this.gl.uniform1f(this.timeUniform, time);
-      this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-
-      requestAnimationFrame(() => this.render());
     }
   };
 
   // ==========================================================================
-  // MUSE POPUP MODAL
+  // MUSE POPUP MODAL - ORBITAL FOCUS
   // ==========================================================================
   const MusePopup = {
     popup: null,
     overlay: null,
     closeBtn: null,
     content: null,
+    image: null,
+    imageContainer: null,
     title: null,
     text: null,
+    particles: null,
     openTimeline: null,
     closeTimeline: null,
     isOpen: false,
+    currentColor: '#ffffff',
 
     init() {
       this.popup = document.getElementById('muse-popup');
       this.overlay = document.getElementById('muse-popup-overlay');
       this.closeBtn = document.getElementById('muse-popup-close');
       this.content = document.querySelector('.muse-popup-content');
+      this.imageContainer = document.getElementById('muse-popup-image');
+      this.image = document.getElementById('muse-popup-img');
       this.title = document.getElementById('muse-popup-title');
       this.text = document.getElementById('muse-popup-text');
+      this.particles = document.getElementById('muse-popup-particles');
 
       if (!this.popup) return;
 
       // Set initial state
       gsap.set(this.popup, { display: 'none', opacity: 0 });
-      gsap.set(this.content, { scale: 0.8, opacity: 0 });
-      gsap.set([this.title, this.text], { opacity: 0, y: 20 });
+      gsap.set(this.content, { scale: 0.7, opacity: 0 });
+      gsap.set(this.imageContainer, { scale: 0.8, opacity: 0 });
+      gsap.set([this.title, this.text], { opacity: 0, y: 30 });
 
       // Close on overlay click
       this.overlay.addEventListener('click', () => this.close());
 
-      // Close on button click
+      // Close on button click (accessibility)
       this.closeBtn.addEventListener('click', () => this.close());
 
       // Close on Escape key
@@ -1525,14 +1566,20 @@
       });
     },
 
-    open(name, description, color) {
+    open(name, description, color, imageSrc) {
       if (!this.popup || this.isOpen) return;
       this.isOpen = true;
+      this.currentColor = color;
 
       // Update content
       this.title.textContent = name;
-      this.title.style.color = color;
       this.text.textContent = description;
+      this.image.src = imageSrc;
+      this.image.alt = name;
+
+      // Set CSS custom property for color-based styling
+      this.content.style.setProperty('--muse-color', color);
+      this.imageContainer.style.setProperty('--muse-color', color);
 
       // Kill any running animations
       if (this.closeTimeline) this.closeTimeline.kill();
@@ -1540,32 +1587,46 @@
       // Show popup container
       gsap.set(this.popup, { display: 'flex' });
 
+      // Create particles
+      this.createParticles(color);
+
       // Create open animation timeline
       this.openTimeline = gsap.timeline({
         defaults: { ease: 'power3.out' }
       });
 
       this.openTimeline
-        // Fade in backdrop with blur effect
+        // Fade in backdrop with heavy blur
         .to(this.popup, {
           opacity: 1,
-          duration: 0.3,
+          duration: 0.4,
         })
-        // Scale in content
+        // Scale and fade in image with aura
+        .to(this.imageContainer, {
+          scale: 1,
+          opacity: 1,
+          duration: 0.6,
+          ease: 'back.out(1.5)',
+        }, '-=0.2')
+        // Fade in content container
         .to(this.content, {
           scale: 1,
           opacity: 1,
           duration: 0.4,
-          ease: 'back.out(1.2)',
-        }, '-=0.1')
+        }, '-=0.4')
         // Stagger in title and text
-        .to([this.title, this.text], {
+        .to(this.title, {
           opacity: 1,
           y: 0,
-          duration: 0.3,
-          stagger: 0.1,
+          duration: 0.4,
           ease: 'power2.out',
-        }, '-=0.2');
+        }, '-=0.2')
+        .to(this.text, {
+          opacity: 1,
+          y: 0,
+          duration: 0.4,
+          ease: 'power2.out',
+        }, '-=0.3');
     },
 
     close() {
@@ -1575,34 +1636,85 @@
       // Kill any running animations
       if (this.openTimeline) this.openTimeline.kill();
 
-      // Create close animation timeline (reverse of open)
+      // Create close animation timeline
       this.closeTimeline = gsap.timeline({
         defaults: { ease: 'power3.in' },
         onComplete: () => {
           gsap.set(this.popup, { display: 'none' });
+          this.clearParticles();
         }
       });
 
       this.closeTimeline
-        // Fade out content elements
-        .to([this.title, this.text], {
+        // Fade out text elements
+        .to([this.text, this.title], {
           opacity: 0,
-          y: -10,
+          y: -20,
           duration: 0.2,
           stagger: 0.05,
         })
-        // Scale out content
-        .to(this.content, {
-          scale: 0.9,
+        // Scale out image
+        .to(this.imageContainer, {
+          scale: 0.8,
           opacity: 0,
           duration: 0.3,
-          ease: 'power2.in',
-        }, '-=0.1')
+        }, '-=0.15')
+        // Scale out content
+        .to(this.content, {
+          scale: 0.7,
+          opacity: 0,
+          duration: 0.3,
+        }, '-=0.25')
         // Fade out backdrop
         .to(this.popup, {
           opacity: 0,
-          duration: 0.25,
-        }, '-=0.15');
+          duration: 0.3,
+        }, '-=0.2');
+    },
+
+    createParticles(color) {
+      if (!this.particles) return;
+
+      // Clear existing particles
+      this.clearParticles();
+
+      // Check for reduced motion
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) return;
+
+      // Create 12 floating particles
+      const particleCount = 12;
+
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'muse-popup-particle';
+        particle.style.setProperty('--muse-color', color);
+
+        // Random starting position around the popup
+        const angle = (i / particleCount) * Math.PI * 2;
+        const radius = 200 + Math.random() * 100;
+        const startX = Math.cos(angle) * radius;
+        const startY = Math.sin(angle) * radius;
+
+        // Random float distance
+        const floatX = (Math.random() - 0.5) * 100;
+        const floatY = (Math.random() - 0.5) * 100;
+
+        particle.style.left = `calc(50% + ${startX}px)`;
+        particle.style.top = `calc(50% + ${startY}px)`;
+        particle.style.setProperty('--particle-x', `${floatX}px`);
+        particle.style.setProperty('--particle-y', `${floatY}px`);
+
+        // Stagger animation start
+        particle.style.animationDelay = `${i * 0.15}s`;
+
+        this.particles.appendChild(particle);
+      }
+    },
+
+    clearParticles() {
+      if (!this.particles) return;
+      this.particles.innerHTML = '';
     }
   };
 
@@ -1651,35 +1763,33 @@
     },
 
     startAnimation() {
-      let lastTime = Date.now();
+      // Initialize lastTime for delta calculation
+      this.lastTime = Date.now();
+      // Animation now handled by master render loop
+    },
 
-      const animate = () => {
-        const currentTime = Date.now();
-        const deltaTime = currentTime - lastTime;
-        lastTime = currentTime;
+    updateOrbitPositions() {
+      if (!this.isInitialized) return;
 
-        // Update animation time
-        this.animationTime += deltaTime * this.orbitSpeed;
+      const currentTime = Date.now();
+      const deltaTime = currentTime - this.lastTime;
+      this.lastTime = currentTime;
 
-        // Update each muse position
-        this.items.forEach((item, index) => {
-          const baseAngle = parseFloat(item.getAttribute('data-angle')) * (Math.PI / 180);
-          const currentAngle = baseAngle + this.animationTime;
+      // Update animation time
+      this.animationTime += deltaTime * this.orbitSpeed;
 
-          // Calculate elliptical position
-          const x = Math.cos(currentAngle) * this.orbitRadiusX;
-          const y = Math.sin(currentAngle) * this.orbitRadiusY;
+      // Update each muse position
+      this.items.forEach((item, index) => {
+        const baseAngle = parseFloat(item.getAttribute('data-angle')) * (Math.PI / 180);
+        const currentAngle = baseAngle + this.animationTime;
 
-          // Apply position
-          item.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
-        });
+        // Calculate elliptical position
+        const x = Math.cos(currentAngle) * this.orbitRadiusX;
+        const y = Math.sin(currentAngle) * this.orbitRadiusY;
 
-        if (this.isInitialized) {
-          requestAnimationFrame(animate);
-        }
-      };
-
-      requestAnimationFrame(animate);
+        // Apply position
+        item.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+      });
     },
 
     applyColors() {
@@ -1698,21 +1808,24 @@
         const color = item.getAttribute('data-color');
         const heading = item.querySelector('.muse-text h3');
         const paragraph = item.querySelector('.muse-text p');
-        const image = item.querySelector('.muse-image');
+        const imageElement = item.querySelector('.muse-image img');
+        const imageContainer = item.querySelector('.muse-image');
 
         // Make both image and heading clickable
         const clickHandler = () => {
           const name = heading ? heading.textContent : '';
           const description = paragraph ? paragraph.textContent : '';
-          MusePopup.open(name, description, color);
+          const imageSrc = imageElement ? imageElement.src : '';
+          MusePopup.open(name, description, color, imageSrc);
         };
 
-        if (image) {
-          image.style.cursor = 'pointer';
-          image.addEventListener('click', clickHandler);
+        if (imageContainer) {
+          imageContainer.style.cursor = 'pointer';
+          imageContainer.addEventListener('click', clickHandler);
         }
 
         if (heading) {
+          heading.style.cursor = 'pointer';
           heading.addEventListener('click', clickHandler);
         }
       });
@@ -1777,6 +1890,7 @@
       this.dots = Array.from(document.querySelectorAll('.slider-dot'));
       this.imageReel = document.getElementById('image-phase-reel');
       this.textReel = document.getElementById('text-phase-reel');
+      this.particleContainer = document.getElementById('phase-transition-particles');
 
       if (!this.section || !this.imageReel || !this.textReel) {
         console.warn('Comet collab slider elements not found');
@@ -1786,12 +1900,29 @@
       this.imageItems = Array.from(this.imageReel.querySelectorAll('.phase-item'));
       this.textItems = Array.from(this.textReel.querySelectorAll('.phase-item'));
 
-      // Show first items
-      if (this.imageItems.length > 0) this.imageItems[0].classList.add('active');
-      if (this.textItems.length > 0) this.textItems[0].classList.add('active');
+      // Initialize all items to hidden state first
+      this.imageItems.forEach(item => {
+        item.classList.remove('active');
+        gsap.set(item, { opacity: 0, y: 100, visibility: 'hidden' });
+      });
+      this.textItems.forEach(item => {
+        item.classList.remove('active');
+        gsap.set(item, { opacity: 0, y: 100, visibility: 'hidden' });
+      });
+
+      // Show first items with proper initial state
+      if (this.imageItems.length > 0) {
+        this.imageItems[0].classList.add('active');
+        gsap.set(this.imageItems[0], { opacity: 1, y: 0, visibility: 'visible' });
+      }
+      if (this.textItems.length > 0) {
+        this.textItems[0].classList.add('active');
+        gsap.set(this.textItems[0], { opacity: 1, y: 0, visibility: 'visible' });
+      }
 
       this.initSlider();
       this.initBouncingLogo();
+      this.initScrollDrivenPhases();
       this.initScrollTriggers();
     },
 
@@ -1813,15 +1944,56 @@
         });
       });
 
-      // Keyboard navigation
+      // Keyboard navigation (arrows + number keys 1-5)
       document.addEventListener('keydown', (e) => {
         if (!this.isBouncingActive) return;
+
+        // Arrow keys
         if (e.key === 'ArrowLeft') this.prevSlide();
         if (e.key === 'ArrowRight') this.nextSlide();
+
+        // Number keys 1-5 for direct phase access
+        const numberKey = parseInt(e.key);
+        if (numberKey >= 1 && numberKey <= 5 && !this.isAnimating) {
+          this.transitionToSlide(numberKey - 1);
+        }
       });
 
       // Update dot states
       this.updateDots();
+    },
+
+    initScrollDrivenPhases() {
+      // Create scroll-triggered phase transitions
+      const h = window.innerHeight;
+      const phaseDuration = SCROLL_TIMING.COMET_PHASE_DURATION;
+      const phaseStart = SCROLL_TIMING.COMET_PHASES_START;
+
+      // Create ScrollTrigger for each phase transition
+      for (let i = 0; i < SCROLL_TIMING.COMET_PHASE_COUNT; i++) {
+        const scrollStart = phaseStart + (i * phaseDuration);
+        const scrollEnd = scrollStart + phaseDuration;
+
+        ScrollTrigger.create({
+          trigger: '.comet-collab-wrapper',
+          start: () => `top+=${scrollStart}vh top`,
+          end: () => `top+=${scrollEnd}vh top`,
+          invalidateOnRefresh: true,
+          anticipatePin: 1,
+          onEnter: () => {
+            // Transitioning TO phase i
+            if (!this.isAnimating && this.currentIndex !== i) {
+              this.transitionToSlide(i, true); // true = scroll-driven (with particles)
+            }
+          },
+          onEnterBack: () => {
+            // Scrolling back, show previous phase
+            if (!this.isAnimating && this.currentIndex !== i) {
+              this.transitionToSlide(i, true);
+            }
+          }
+        });
+      }
     },
 
     initScrollTriggers() {
@@ -1876,6 +2048,7 @@
     startBouncing() {
       if (this.isBouncingActive || !this.bouncingLogo) return;
       this.isBouncingActive = true;
+      this.justStartedBouncing = true; // Flag to prevent initial spark
 
       // Enable cursor for dragging
       this.bouncingLogo.style.cursor = 'grab';
@@ -1887,7 +2060,12 @@
         ease: 'power2.out'
       });
 
-      this.animateLogo();
+      // Clear the flag after a short delay (enough time for first frame)
+      setTimeout(() => {
+        this.justStartedBouncing = false;
+      }, 100);
+
+      // Animation now handled by master render loop
     },
 
     initBouncingLogo() {
@@ -1977,10 +2155,7 @@
       this.isDragging = false;
       this.bouncingLogo.style.cursor = 'grab';
 
-      // Resume bouncing animation
-      if (this.isBouncingActive) {
-        this.animateLogo();
-      }
+      // Bouncing will automatically resume via master render loop
     },
 
     updateLogoDimensions() {
@@ -2010,8 +2185,9 @@
       this.logoY = Math.max(0, Math.min(this.logoY, this.containerHeight - this.logoHeight));
     },
 
-    animateLogo() {
-      if (!this.bouncingLogo || this.isDragging) return;
+    updateLogoPosition() {
+      // Called by master render loop
+      if (!this.bouncingLogo || this.isDragging || !this.isBouncingActive) return;
 
       const padding = 20;
 
@@ -2054,16 +2230,13 @@
         bounceY = this.logoY + this.logoHeight / 2;
       }
 
-      // Create sparks on bounce
-      if (bounced) {
+      // Create sparks on bounce (but not on initial start)
+      if (bounced && !this.justStartedBouncing) {
         this.createSparks(bounceX, bounceY);
       }
 
       // Apply position (depth pulse handled by CSS animation on inner image)
       this.bouncingLogo.style.transform = `translate(${this.logoX}px, ${this.logoY}px)`;
-
-      // Continue animation
-      this.animationFrame = requestAnimationFrame(() => this.animateLogo());
     },
 
     createSparks(x, y) {
@@ -2121,40 +2294,116 @@
       this.transitionToSlide(prevIndex);
     },
 
-    transitionToSlide(targetIndex) {
+    transitionToSlide(targetIndex, scrollDriven = false) {
       if (this.isAnimating || targetIndex === this.currentIndex) return;
 
       this.isAnimating = true;
       const previousIndex = this.currentIndex;
       this.currentIndex = targetIndex;
 
-      // Animate image
-      this.animateSlideTransition(this.imageItems, previousIndex, targetIndex);
-
-      // Animate text with slight delay
-      setTimeout(() => {
-        this.animateSlideTransition(this.textItems, previousIndex, targetIndex);
-        this.isAnimating = false;
-        this.updateDots();
-      }, 150);
-    },
-
-    animateSlideTransition(items, fromIndex, toIndex) {
-      // Remove active from old item
-      if (items[fromIndex]) {
-        items[fromIndex].classList.add('exiting');
-        items[fromIndex].classList.remove('active');
+      // Create particle burst if scroll-driven
+      if (scrollDriven) {
+        this.createTransitionParticles();
       }
 
-      // Add active to new item
+      // Animate image with parallax (slower movement)
+      this.animateSlideTransition(this.imageItems, previousIndex, targetIndex, 0.8);
+
+      // Animate text with slight delay and faster movement (parallax effect)
       setTimeout(() => {
-        if (items[fromIndex]) {
-          items[fromIndex].classList.remove('exiting');
-        }
-        if (items[toIndex]) {
-          items[toIndex].classList.add('active');
-        }
+        this.animateSlideTransition(this.textItems, previousIndex, targetIndex, 1.2);
+        this.isAnimating = false;
+        this.updateDots();
       }, 100);
+    },
+
+    animateSlideTransition(items, fromIndex, toIndex, speedFactor = 1) {
+      // GSAP timeline for smooth transitions
+      const timeline = gsap.timeline({
+        defaults: { ease: 'power3.inOut' }
+      });
+
+      // Fade out and slide up previous item
+      if (items[fromIndex]) {
+        timeline.to(items[fromIndex], {
+          opacity: 0,
+          y: -50 * speedFactor,
+          duration: 0.4,
+          onComplete: () => {
+            items[fromIndex].classList.remove('active');
+            gsap.set(items[fromIndex], { y: 0, visibility: 'hidden' });
+          }
+        });
+      }
+
+      // Fade in and slide up new item
+      if (items[toIndex]) {
+        gsap.set(items[toIndex], { y: 50 * speedFactor, opacity: 0, visibility: 'visible' });
+        items[toIndex].classList.add('active');
+
+        timeline.to(items[toIndex], {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          ease: 'back.out(1.2)',
+        }, '-=0.2'); // Overlap slightly
+      }
+    },
+
+    createTransitionParticles() {
+      if (!this.particleContainer) return;
+
+      // Check for reduced motion
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) return;
+
+      // Create 16 burst particles in current muse color
+      const particleCount = 16;
+      const color = this.museColors[this.currentIndex % this.museColors.length];
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'phase-particle';
+        particle.style.setProperty('--particle-color', color);
+
+        // Burst outward in all directions
+        const angle = (i / particleCount) * Math.PI * 2;
+        const distance = 150 + Math.random() * 100;
+        const burstX = Math.cos(angle) * distance;
+        const burstY = Math.sin(angle) * distance;
+
+        particle.style.left = centerX + 'px';
+        particle.style.top = centerY + 'px';
+        particle.style.setProperty('--burst-x', `${burstX}px`);
+        particle.style.setProperty('--burst-y', `${burstY}px`);
+
+        // Animate with GSAP for better control
+        gsap.fromTo(particle,
+          { scale: 0, opacity: 0 },
+          {
+            scale: 1,
+            opacity: 1,
+            duration: 0.2,
+            ease: 'power2.out',
+            onComplete: () => {
+              // Burst outward
+              gsap.to(particle, {
+                x: burstX,
+                y: burstY,
+                scale: 0.3,
+                opacity: 0,
+                duration: 0.8,
+                ease: 'power2.out',
+                onComplete: () => particle.remove()
+              });
+            }
+          }
+        );
+
+        this.particleContainer.appendChild(particle);
+      }
     },
 
     updateDots() {
@@ -2232,7 +2481,6 @@
     initEventListeners();
     initGSAPAnimations();
     resize();
-    render();
 
     // Initialize unified starfield background
     UnifiedStarfield.init();
@@ -2253,6 +2501,9 @@
 
     // Initialize comet collab slider with bouncing logo
     CometCollabSlider.init();
+
+    // Start master render loop (consolidates all animations)
+    masterRender();
   }
 
   // Start the application
