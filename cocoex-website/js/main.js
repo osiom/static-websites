@@ -1077,6 +1077,21 @@
         }
       );
 
+      // Shine animation for Stardust and Horizon words
+      ScrollTrigger.create({
+        trigger: '.comet-collab-wrapper',
+        start: 'top 50%',
+        invalidateOnRefresh: true,
+        onEnter: () => {
+          triggerShineAnimation();
+          log('✨ COMET-SHINE: Stardust → Horizon animation triggered');
+        },
+        onEnterBack: () => {
+          triggerShineAnimation();
+          log('✨ COMET-SHINE: Stardust → Horizon animation triggered (scroll back)');
+        }
+      });
+
       // Crossfade: intro fades out while connected images fade in
       gsap.timeline({
         scrollTrigger: {
@@ -1940,6 +1955,41 @@
       }
     }
   };
+
+  // ==========================================================================
+  // SHINE ANIMATION - STARDUST & HORIZON
+  // ==========================================================================
+  function triggerShineAnimation() {
+    const stardustWord = document.querySelector('[data-shine="stardust"]');
+    const horizonWord = document.querySelector('[data-shine="horizon"]');
+
+    if (!stardustWord || !horizonWord) return;
+
+    // Remove any existing animation classes
+    stardustWord.classList.remove('shine-active');
+    horizonWord.classList.remove('shine-active');
+
+    // Trigger reflow to restart animation
+    void stardustWord.offsetWidth;
+    void horizonWord.offsetWidth;
+
+    // Stardust shines immediately
+    stardustWord.classList.add('shine-active');
+
+    // Horizon shines after 1.5 seconds
+    setTimeout(() => {
+      horizonWord.classList.add('shine-active');
+    }, 1500);
+
+    // Clean up animation classes after completion
+    setTimeout(() => {
+      stardustWord.classList.remove('shine-active');
+    }, 1200);
+
+    setTimeout(() => {
+      horizonWord.classList.remove('shine-active');
+    }, 2700); // 1500ms delay + 1200ms animation
+  }
 
   // ==========================================================================
   // INITIALIZATION
