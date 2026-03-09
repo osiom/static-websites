@@ -225,7 +225,7 @@
   // ==========================================================================
   // DEBUG SYSTEM - Set to true to enable logging
   // ==========================================================================
-  const DEBUG_ENABLED = true; // Change to false to disable all logging
+  const DEBUG_ENABLED = false; // Change to false to disable all logging
 
   function log(message) {
     if (!DEBUG_ENABLED) return;
