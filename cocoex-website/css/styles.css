@@ -48,26 +48,32 @@ html, body {
   /* Typography - Canela font family */
   --font-canela: 'canela', Georgia, serif;
 
-  /* Typography Scale */
-  --font-h1-size: 36px;
-  --font-h1-height: 38px;
+  /* Typography Scale - Desktop (base) */
+  --font-h1-size: clamp(24px, 3vw, 48px);
+  --font-h1-height: clamp(28px, 3.2vw, 52px);
   --font-h1-weight: 700; /* Bold */
 
-  --font-h2-size: 18px;
-  --font-h2-height: 21px;
+  --font-h2-size: clamp(14px, 1.5vw, 22px);
+  --font-h2-height: clamp(18px, 1.8vw, 26px);
   --font-h2-weight: 400; /* Regular */
 
   /* Middle size for body text */
-  --font-body-size: 32px;
-  --font-body-height: 38px;
+  --font-body-size: clamp(20px, 2.5vw, 36px);
+  --font-body-height: clamp(26px, 3vw, 42px);
   --font-body-weight: 400; /* Regular */
 
-  /* Spacing */
-  --spacing-xs: 0.5rem;
-  --spacing-sm: 1rem;
-  --spacing-md: 2rem;
-  --spacing-lg: 4rem;
-  --spacing-xl: 8rem;
+  /* Responsive logo sizes */
+  --intro-logo-size: clamp(60px, 15vw, 250px);
+  --muse-logo-size: clamp(150px, 20vw, 300px);
+  --muse-orbit-image-size: clamp(80px, 12vw, 150px);
+  --comet-logo-size: clamp(100px, 15vw, 182px);
+
+  /* Spacing - Responsive */
+  --spacing-xs: clamp(0.25rem, 1vw, 0.5rem);
+  --spacing-sm: clamp(0.5rem, 2vw, 1rem);
+  --spacing-md: clamp(1rem, 3vw, 2rem);
+  --spacing-lg: clamp(2rem, 5vw, 4rem);
+  --spacing-xl: clamp(3rem, 8vw, 8rem);
 
   /* Transitions */
   --transition-fast: 0.15s ease-out;
@@ -215,6 +221,8 @@ img {
    ========================================================================== */
 .orbit-dot {
   position: absolute;
+  width: clamp(10px, 2vw, 16px);
+  height: clamp(10px, 2vw, 16px);
   border-radius: 50%;
   opacity: 0;
   transition: opacity var(--transition-slow);
@@ -295,17 +303,19 @@ img {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, calc(-50% + 280px));
+  transform: translate(-50%, calc(-50% + clamp(180px, 25vw, 280px)));
   opacity: 0;
   pointer-events: none;
   z-index: 3;
   text-align: center;
+  width: 90%;
+  max-width: 600px;
   will-change: opacity, transform;
 }
 
 .transition-text p {
   font-family: var(--font-canela);
-  font-size: var(--font-h2-size);
+  font-size: clamp(14px, 2vw, 22px);
   line-height: var(--font-h2-height);
   font-weight: var(--font-h2-weight);
   color: var(--color-white);
@@ -361,12 +371,13 @@ img {
   align-items: center;
   justify-content: center;
   background: transparent;
-  padding: var(--spacing-lg);
+  padding: clamp(1rem, 5vw, 4rem);
 }
 
 .text-content {
-  max-width: 800px;
+  max-width: min(90%, 800px);
   width: 100%;
+  padding: 0 clamp(1rem, 3vw, 2rem);
 }
 
 .reveal-text {
@@ -440,8 +451,8 @@ img {
 .comet-collab-intro-logo img {
   width: auto;
   height: auto;
-  max-width: 182px;
-  max-height: 91px;
+  max-width: var(--comet-logo-size);
+  max-height: calc(var(--comet-logo-size) * 0.5);
   object-fit: contain;
   filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.3));
 }
@@ -484,7 +495,7 @@ img {
   top: 0;
   width: 100%;
   height: 100vh;
-  padding: var(--spacing-xl);
+  padding: clamp(2rem, 8vw, 8rem);
   z-index: 50;
   opacity: 0;
   will-change: opacity;
@@ -519,7 +530,7 @@ img {
 /* Individual image items */
 .comet-image-item {
   flex: 0 1 auto;
-  max-width: 200px;
+  max-width: clamp(120px, 20vw, 250px);
   position: relative;
 }
 
@@ -972,28 +983,8 @@ img {
   max-width: 90%;
 }
 
-/* Responsive - Tablet */
+/* Responsive - Tablet (Comet Slider) */
 @media screen and (max-width: 1024px) {
-  .comet-collab-wrapper {
-    height: 1050vh; /* Proportionally adjusted for longer intro */
-  }
-
-  .comet-collab-intro-logo img {
-    max-width: 156px;
-    max-height: 78px;
-  }
-
-  .comet-collab-intro-content {
-    max-width: 580px;
-  }
-
-
-  .comet-collab-bouncing-logo .comet-collab-logo-image {
-    max-width: 130px;
-    max-height: 65px;
-    animation: depth-pulse 3.5s ease-in-out infinite;
-  }
-
   .comet-collab-content {
     grid-template-columns: 1fr;
     gap: var(--spacing-md);
@@ -1009,29 +1000,9 @@ img {
 
 }
 
-/* Responsive - Mobile */
+/* Responsive - Mobile (Comet Slider) */
 @media screen and (max-width: 768px) {
-  :root {
-    --spacing-lg: 1.5rem;
-    /* Responsive typography - Mobile */
-    --font-h1-size: 22px;
-    --font-h1-height: 26px;
-    --font-h2-size: 14px;
-    --font-h2-height: 17px;
-  }
-
-  .comet-collab-wrapper {
-    height: 1050vh; /* Proportionally adjusted for longer intro */
-  }
-
-  .comet-collab-intro-logo img {
-    max-width: 130px;
-    max-height: 65px;
-  }
-
-  .comet-collab-intro-content {
-    max-width: 500px;
-  }
+  /* Most responsive sizing handled by clamp() in base styles */
 
   .comet-collab-section {
     min-height: 100vh;
@@ -1042,15 +1013,9 @@ img {
     padding: var(--spacing-sm);
   }
 
-  .comet-collab-bouncing-logo .comet-collab-logo-image {
-    max-width: 104px;
-    max-height: 52px;
-    animation: depth-pulse 4s ease-in-out infinite;
-  }
-
   .spark {
-    width: 4px;
-    height: 4px;
+    width: clamp(3px, 0.8vw, 4px);
+    height: clamp(3px, 0.8vw, 4px);
   }
 
   .slider-nav {
@@ -1060,13 +1025,13 @@ img {
   }
 
   .slider-nav-btn {
-    width: 32px;
-    height: 32px;
+    width: clamp(28px, 5vw, 32px);
+    height: clamp(28px, 5vw, 32px);
   }
 
   .slider-nav-btn::before {
-    width: 7px;
-    height: 7px;
+    width: clamp(6px, 1.2vw, 7px);
+    height: clamp(6px, 1.2vw, 7px);
     border-width: 2px;
   }
 
@@ -1079,28 +1044,28 @@ img {
   }
 
   .slider-dot {
-    width: 9px;
-    height: 9px;
+    width: clamp(8px, 1.5vw, 9px);
+    height: clamp(8px, 1.5vw, 9px);
     border-width: 1.5px;
   }
 
   .slider-dot::before {
-    width: 4px;
-    height: 4px;
+    width: clamp(3px, 0.7vw, 4px);
+    height: clamp(3px, 0.7vw, 4px);
   }
 
   .slider-dot.active {
-    width: 14px;
-    height: 14px;
+    width: clamp(12px, 2.5vw, 14px);
+    height: clamp(12px, 2.5vw, 14px);
   }
 
   .slider-dot.active::before {
-    width: 6px;
-    height: 6px;
+    width: clamp(5px, 1vw, 6px);
+    height: clamp(5px, 1vw, 6px);
   }
 
   .comet-collab-reel {
-    height: 35vh;
+    height: clamp(30vh, 35vh, 40vh);
   }
 
 }
@@ -1130,10 +1095,10 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
+  width: clamp(44px, 6vw, 52px);
+  height: clamp(44px, 6vw, 52px);
   color: var(--color-black);
-  border-radius: 12px;
+  border-radius: clamp(10px, 1.5vw, 12px);
   transition: color var(--transition-medium), transform var(--transition-medium), background-color var(--transition-medium);
 }
 
@@ -1150,8 +1115,8 @@ img {
 }
 
 .social-icon {
-  width: 32px;
-  height: 32px;
+  width: clamp(24px, 4vw, 32px);
+  height: clamp(24px, 4vw, 32px);
 }
 
 .footer-logo {
@@ -1159,7 +1124,7 @@ img {
   bottom: var(--spacing-md);
   left: 50%;
   transform: translateX(-50%);
-  width: 172px;
+  width: clamp(120px, 18vw, 172px);
   height: auto;
   z-index: 100;
   opacity: 0;
@@ -1209,7 +1174,7 @@ img {
 }
 
 .muse-intro-logo-image {
-  width: 300px;
+  width: var(--muse-logo-size);
   height: auto;
   display: block;
   object-fit: contain;
@@ -1319,7 +1284,7 @@ img {
 }
 
 .muse-logo-image {
-  width: 300px;
+  width: var(--muse-logo-size);
   height: auto;
   display: block;
   object-fit: contain;
@@ -1344,14 +1309,14 @@ img {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
+  gap: clamp(0.15rem, 0.5vw, 0.25rem);
   will-change: transform;
 }
 
 /* Muse Image */
 .muse-orbit-item .muse-image {
-  width: 140px;
-  height: 140px;
+  width: var(--muse-orbit-image-size);
+  height: var(--muse-orbit-image-size);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1427,7 +1392,7 @@ img {
 .muse-popup-content {
   position: relative;
   background: transparent;
-  max-width: 500px;
+  max-width: min(90%, 500px);
   width: 90%;
   max-height: 80vh;
   overflow: visible;
@@ -1435,7 +1400,7 @@ img {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: clamp(1.5rem, 4vw, 3rem);
   will-change: transform, opacity;
   /* No hard container - floats in space */
 }
@@ -1443,8 +1408,8 @@ img {
 /* Muse Image Container with Aura */
 .muse-popup-image {
   position: relative;
-  width: 240px;
-  height: 240px;
+  width: clamp(140px, 30vw, 240px);
+  height: clamp(140px, 30vw, 240px);
   border-radius: 50%;
   overflow: hidden;
   will-change: transform, opacity;
@@ -1583,47 +1548,14 @@ img {
    Responsive Styles - Tablet
    ========================================================================== */
 @media screen and (max-width: 1024px) {
-  :root {
-    --spacing-lg: 3rem;
-    /* Responsive typography - Tablet */
-    --font-h1-size: 30px;
-    --font-h1-height: 33px;
-    --font-h2-size: 16px;
-    --font-h2-height: 19px;
+  /* Most responsive sizing handled by clamp() in base styles */
+
+  .muse-orbit-item {
+    touch-action: manipulation;
   }
 
-  .text-content {
-    max-width: 800px;
-  }
-
-  .transition-text {
-    transform: translate(-50%, calc(-50% + 220px));
-  }
-
-  /* Muse Section Tablet */
-  .muse-logo-image {
-    width: 250px;
-  }
-
-  .muse-orbit-item .muse-image {
-    width: 120px;
-    height: 120px;
-  }
-
-
-  /* Muse Intro Tablet */
-  .muse-intro-logo-image {
-    width: 250px;
-  }
-
-  /* Muse Popup Tablet */
-  .muse-popup-image {
-    width: 200px;
-    height: 200px;
-  }
-
-  .muse-popup-title {
-    font-size: calc(var(--font-h1-size) * 1.1);
+  .comet-collab-intro-content {
+    padding: 0 clamp(1rem, 4vw, 3rem);
   }
 }
 
@@ -1631,99 +1563,23 @@ img {
    Responsive Styles - Mobile
    ========================================================================== */
 @media screen and (max-width: 768px) {
-  :root {
-    --spacing-lg: 1.5rem;
-  }
-
-  .orbit-dot {
-    width: 10px;
-    height: 10px;
-  }
-
-  .transition-text {
-    transform: translate(-50%, calc(-50% + 180px));
-  }
-
-  .transition-text p {
-    font-size: calc(var(--font-h1-size) * 0.9);
-    line-height: calc(var(--font-h1-height) * 0.9);
-    padding: 0 var(--spacing-sm);
-  }
-
-  .text-section {
-    padding: var(--spacing-md);
-  }
-
-  .white-section {
-    padding: 0;
-  }
-
-  /* Muse Section Mobile */
-  .muse-logo-image {
-    width: 180px;
-  }
-
-  .muse-orbit-item .muse-image {
-    width: 100px;
-    height: 100px;
-  }
+  /* Most responsive sizing handled by clamp() in base styles */
 
   .muse-orbit-item {
     touch-action: manipulation;
     cursor: pointer;
   }
 
-  /* Popup Mobile */
-  .muse-popup-body {
-    padding: var(--spacing-lg);
+  .white-section {
+    padding: 0;
   }
 
-  .muse-popup-close {
-    top: var(--spacing-sm);
-    right: var(--spacing-sm);
-    width: 36px;
-    height: 36px;
-    font-size: 24px;
+  .comet-collab-connected-content {
+    padding: clamp(1rem, 5vw, 3rem);
   }
 
-  .social-links {
-    gap: var(--spacing-xs);
-    bottom: calc(var(--spacing-sm) + 50px);
-  }
-
-  .social-link {
-    width: 52px;
-    height: 52px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 12px;
-  }
-
-  .social-icon {
-    width: 28px;
-    height: 28px;
-  }
-
-  .footer-logo {
-    width: 150px;
-    bottom: var(--spacing-sm);
-  }
-
-  /* Muse Intro Mobile */
-  .muse-intro-logo-image {
-    width: 180px;
-  }
-
-  /* Muse Popup Mobile */
-  .muse-popup-image {
-    width: 160px;
-    height: 160px;
-  }
-
-  .muse-popup-content {
-    max-width: 350px;
-    gap: var(--spacing-md);
+  .comet-image-item {
+    max-width: clamp(100px, 25vw, 180px);
   }
 
   .muse-popup-body {
@@ -1740,90 +1596,22 @@ img {
    Responsive Styles - Small Mobile
    ========================================================================== */
 @media screen and (max-width: 480px) {
-  :root {
-    /* Responsive typography - Small Mobile */
-    --font-h1-size: 20px;
-    --font-h1-height: 24px;
-    --font-h2-size: 13px;
-    --font-h2-height: 16px;
-  }
+  /* Most responsive sizing handled by clamp() in base styles */
 
   .text-section {
-    padding: var(--spacing-sm);
-  }
-
-  .social-links {
-    gap: var(--spacing-xs);
-  }
-
-  .social-link {
-    width: 48px;
-    height: 48px;
-    border-radius: 10px;
-  }
-
-  .social-icon {
-    width: 24px;
-    height: 24px;
-  }
-
-  .footer-logo {
-    width: 130px;
-  }
-
-  .white-section {
-    padding: var(--spacing-sm);
-  }
-
-  /* Muse Popup Small Mobile */
-  .muse-popup-image {
-    width: 140px;
-    height: 140px;
-  }
-
-  .muse-popup-content {
-    max-width: 300px;
-  }
-
-  .muse-popup-title {
-    font-size: var(--font-h1-size);
+    padding: clamp(0.5rem, 3vw, 1rem);
   }
 
   .muse-popup-hint {
-    display: none; /* Hide on very small screens */
+    font-size: clamp(10px, 2vw, 12px);
+  }
+
+  .comet-image-item {
+    max-width: clamp(90px, 28vw, 140px);
   }
 }
 
-/* ==========================================================================
-   Responsive Styles - Large Desktop
-   ========================================================================== */
-@media screen and (min-width: 1440px) {
-  :root {
-    /* Responsive typography - Large Desktop */
-    --font-h1-size: 42px;
-    --font-h1-height: 46px;
-    --font-h2-size: 20px;
-    --font-h2-height: 24px;
-  }
-
-  .text-content {
-    max-width: 1100px;
-  }
-}
-
-@media screen and (min-width: 1920px) {
-  :root {
-    /* Responsive typography - Extra Large Desktop */
-    --font-h1-size: 48px;
-    --font-h1-height: 52px;
-    --font-h2-size: 22px;
-    --font-h2-height: 26px;
-  }
-
-  .text-content {
-    max-width: 1300px;
-  }
-}
+/* Note: Large desktop breakpoints removed - clamp() handles all screen sizes fluidly */
 
 /* ==========================================================================
    Utility Classes

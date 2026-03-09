@@ -1779,16 +1779,20 @@
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
-      // Horizontal ellipse (wider on left/right)
+      // Mobile: Vertical ellipse (taller than wide) for better centering
       if (viewportWidth <= 768) {
-        this.orbitRadiusY = Math.min(viewportHeight, viewportWidth) * 0.25;
-        this.orbitRadiusX = this.orbitRadiusY * 1.8;
-      } else if (viewportWidth <= 1024) {
-        this.orbitRadiusY = Math.min(viewportHeight, viewportWidth) * 0.28;
-        this.orbitRadiusX = this.orbitRadiusY * 1.8;
-      } else {
+        this.orbitRadiusX = Math.min(viewportHeight, viewportWidth) * 0.28;
+        this.orbitRadiusY = this.orbitRadiusX * 1.6; // Vertical ellipse - taller
+      }
+      // Tablet: Slightly more vertical ellipse
+      else if (viewportWidth <= 1024) {
+        this.orbitRadiusX = Math.min(viewportHeight, viewportWidth) * 0.30;
+        this.orbitRadiusY = this.orbitRadiusX * 1.4; // Slightly vertical
+      }
+      // Desktop: Horizontal ellipse (original behavior)
+      else {
         this.orbitRadiusY = Math.min(viewportHeight, viewportWidth) * 0.30;
-        this.orbitRadiusX = this.orbitRadiusY * 1.8;
+        this.orbitRadiusX = this.orbitRadiusY * 1.8; // Horizontal ellipse - wider
       }
     },
 
