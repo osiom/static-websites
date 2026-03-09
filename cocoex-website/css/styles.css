@@ -1195,6 +1195,7 @@ img {
   max-width: 1400px;
   width: 90%;
   text-align: justify;
+  text-transform: uppercase;
   padding: 0 var(--spacing-md);
 }
 
@@ -1211,7 +1212,8 @@ img {
   opacity: 0.9;
   max-width: 1400px;
   width: 90%;
-  text-align: center;
+  text-align: justify;
+  text-transform: uppercase;
   padding: 0 var(--spacing-md);
 }
 
@@ -1227,6 +1229,13 @@ img {
 .muse-intro-text-bottom a:hover,
 .muse-intro-text-bottom a:focus {
   opacity: 0.7;
+}
+
+/* Highlighted "Muse" text - hollow letters with transparent fill */
+.highlight-muse {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--color-white);
+  text-stroke: 1px var(--color-white);
 }
 
 /* White Section Content - Sticky positioning */
