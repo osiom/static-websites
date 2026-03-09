@@ -620,10 +620,11 @@ After cleanup, run these tests:
 
 **In cocoex.xyz project:**
 
-1. **CometCollabSlider Module** (main.js:1841-2617)
-   - Status: Not currently used in HTML
-   - Action: Can be removed if slider feature is deprecated
-   - Verification: Check if any HTML references `.comet-collab-bouncing-logo`
+1. ~~**CometCollabSlider Module**~~ ✅ **COMPLETED (March 9, 2026)**
+   - **Removed:** 586 lines from main.js (lines 1878-2453 + references)
+   - **Removed:** 493 lines from styles.css (slider section + responsive variants)
+   - **Impact:** 1,079 lines total reduction (~35KB uncompressed)
+   - **Learning:** Always verify associated CSS when removing JS modules
 
 2. **Unused Media Query Variables**
    - Check for hardcoded typography in old breakpoints
@@ -636,6 +637,270 @@ After cleanup, run these tests:
 4. **Redundant GPU Program Switches**
    - Cache last active WebGL program
    - Skip `gl.useProgram()` if already active
+
+### Real-World Cleanup Case Study
+
+**Project:** cocoex.xyz - CometCollabSlider Module Removal
+**Date:** March 9, 2026
+**Result:** Removed 1,079 unused lines (22.3% JS, 29.6% CSS reduction)
+
+#### What Happened
+
+**Context:**
+- Slider feature with bouncing logo was replaced by static connected images layout
+- Module initialization was commented out but code remained
+- Module still referenced in master render loop (safe because never initialized)
+
+#### Cleanup Process
+
+**Step 1: Verification (Critical!)**
+```bash
+# Check if HTML elements exist
+grep -r "comet-collab-bouncing-logo\|slider-nav\|slider-dot" index.html
+# Result: No matches - safe to remove
+
+# Verify initialization status
+grep "CometCollabSlider.init()" main.js
+# Result: Line 2612 commented out - confirmed unused
+```
+
+**Step 2: Identify Module Boundaries**
+```bash
+# Find module definition
+grep -n "const CometCollabSlider = {" main.js  # Line 1878
+grep -n "^  };" main.js | awk '$1 > 1878 && $1 < 2610' # Line 2453
+# Total: 575 lines
+
+# Find related CSS
+grep -n "Comet.*Slider\|Bouncing Logo" styles.css
+# Section: Lines 571-1072 (502 lines)
+```
+
+**Step 3: Removal Strategy**
+```bash
+# Create cleaned files (preserve everything else)
+head -1874 main.js > main_cleaned.js
+tail -n +2455 main.js >> main_cleaned.js
+
+head -570 styles.css > styles_cleaned.css
+tail -n +1073 styles.css >> styles_cleaned.css
+```
+
+**Step 4: Remove References**
+```javascript
+// Master render loop reference (lines 808-810)
+if (CometCollabSlider.isBouncingActive && !CometCollabSlider.isDragging) {
+  CometCollabSlider.updateLogoPosition();  // ❌ Remove these lines
+}
+```
+
+**Step 5: The Critical Mistake (Learning Moment!)**
+
+**Problem Found:** Comet intro section broke after cleanup
+- Gradient background wasn't rendering
+- Section appeared empty/broken
+
+**Root Cause:**
+```css
+/* Accidentally removed WITH slider section: */
+.comet-collab-background-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  opacity: 0.85;
+}
+```
+
+**Why This Happened:**
+- CSS was grouped in "Comet Collab Slider Section" (lines 571-1072)
+- `.comet-collab-background-canvas` was defined at line 590-599
+- Canvas IS actually used for Comet intro gradient (not slider!)
+- Naming suggested it was slider-related, but it wasn't
+
+**The Fix:**
+```css
+/* Restored after static logo, before Social Links */
+/* Gradient background canvas for Comet section */
+.comet-collab-background-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  opacity: 0.85; /* Blend with starfield underneath */
+}
+```
+
+#### Key Learnings
+
+**1. CSS Naming Can Be Misleading**
+- Don't trust section headers blindly
+- Verify each selector's usage independently
+- Just because CSS is in "Slider Section" doesn't mean it's only for slider
+
+**2. Cross-Reference Everything**
+```bash
+# Before removing ANY CSS class:
+grep "class-name" index.html        # HTML usage
+grep "class-name" main.js           # JS manipulation
+grep "getElementById('id')" main.js # Dynamic references
+```
+
+**3. WebGL Canvases Are Easy to Miss**
+- Canvas styling is often simple (position, size, z-index)
+- Can be grouped with unrelated sections
+- ALWAYS check: `grep "<canvas" index.html` before removing canvas styles
+
+**4. Test Immediately After Cleanup**
+- Don't batch multiple cleanups
+- Test each section removal individually
+- Visual inspection catches styling issues immediately
+
+**5. Create Backups First**
+```bash
+cp file.js file.js.backup
+cp file.css file.css.backup
+# Easy rollback if something breaks
+```
+
+#### Detection Strategy for Future Cleanups
+
+**High-Risk Patterns (Double-Check These):**
+
+```bash
+# 1. Canvas elements (often have minimal CSS)
+grep -n "<canvas" index.html
+grep -n "canvas.*{" styles.css  # Verify each canvas style
+
+# 2. Background/overlay elements
+grep -n "background-canvas\|overlay\|backdrop" styles.css
+
+# 3. Sticky/fixed positioning (used across sections)
+grep -n "position: sticky\|position: fixed" styles.css
+
+# 4. Shared z-index layers
+grep -n "z-index" styles.css  # May be used by multiple features
+```
+
+**Safe-to-Remove Indicators:**
+
+✅ Interactive controls (buttons, dots, nav) with no HTML
+✅ Animation keyframes with no CSS animation references
+✅ Hover states for non-existent elements
+✅ Media queries for removed elements
+✅ JavaScript event handlers for removed elements
+
+**Requires Investigation:**
+
+⚠️ Canvas elements (might be shared)
+⚠️ Background/gradient styles (might be reused)
+⚠️ Position/z-index styles (might affect layout)
+⚠️ Opacity/visibility animations (might be controlled by JS)
+
+#### Verification Checklist
+
+After cleanup, verify ALL sections work:
+
+**Visual Tests:**
+- [ ] Intro animation plays
+- [ ] Text sections fade in
+- [ ] Muse orbit rotates
+- [ ] Muse popups open
+- [ ] **Comet intro displays (gradient background!)** ← Caught the bug here
+- [ ] Comet connected images show
+- [ ] Footer appears
+- [ ] All WebGL canvases render
+
+**Console Tests:**
+```javascript
+// Check for errors
+console.error() // Should be empty
+
+// Verify canvases initialized
+document.querySelectorAll('canvas').forEach(c => {
+  console.log(c.id, c.width, c.height); // All should have dimensions
+});
+```
+
+**Network Tests:**
+- File sizes reduced appropriately
+- No 404s for removed assets
+- Lighthouse score maintained or improved
+
+#### Results & Metrics
+
+**Before Cleanup:**
+- main.js: 2,621 lines (92KB)
+- styles.css: 1,667 lines (38.4KB)
+- Total: 4,288 lines (130.4KB)
+
+**After Cleanup:**
+- main.js: 2,035 lines (68KB) - 22.3% reduction
+- styles.css: 1,174 lines (26KB) - 29.6% reduction
+- Total: 3,209 lines (94KB) - 25.2% overall reduction
+
+**Performance Impact:**
+- ~36KB uncompressed savings
+- ~9KB gzipped savings
+- Faster parsing and execution
+- Cleaner codebase for maintenance
+- **0 functional changes** - all features work as before
+
+#### Commit Message Format
+
+```
+refactor: remove unused CometCollabSlider module
+
+- Removed CometCollabSlider module (586 lines JS)
+  - Bouncing logo system
+  - Image reel slider
+  - Navigation controls
+  - Touch/drag handlers
+
+- Removed slider-related CSS (493 lines CSS)
+  - Slider section, bouncing logo styles
+  - Navigation buttons and dots
+  - Animation keyframes
+  - Responsive variants
+
+- Restored .comet-collab-background-canvas
+  - Was accidentally removed with slider section
+  - Required for Comet intro gradient rendering
+
+Total reduction: 1,079 lines (35KB uncompressed)
+Feature replaced by static connected images layout
+
+TESTED: All sections working correctly
+BACKUP: .backup files created
+NO BREAKING CHANGES: All functionality preserved
+```
+
+#### Prevention Tips
+
+**Future Cleanup Protocol:**
+
+1. **HTML First:** Identify what's actually in the DOM
+2. **CSS Second:** Match selectors to HTML elements
+3. **JS Third:** Verify no dynamic manipulation
+4. **Canvas Special Case:** Always verify canvas styles independently
+5. **Test Immediately:** Don't move to next cleanup until current one verified
+6. **Backup Everything:** One command rollback if something breaks
+
+**Red Flags Checklist:**
+
+Before removing ANY style block, ask:
+- [ ] Is this block well-named and scoped? (If not, investigate deeper)
+- [ ] Are there canvas elements involved? (High risk)
+- [ ] Does it affect positioning/z-index? (Could break layout)
+- [ ] Is it in a "shared" section? (Might be used elsewhere)
+- [ ] Did I verify HTML doesn't use this? (Essential)
+- [ ] Did I check for dynamic JS usage? (Can miss static checks)
+
+**Remember:** 15 minutes of verification prevents hours of debugging!
 
 ## Resources
 

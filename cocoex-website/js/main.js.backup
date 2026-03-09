@@ -804,6 +804,10 @@
       MuseScroll.updateOrbitPositions();
     }
 
+    // Update bouncing logo if active
+    if (CometCollabSlider.isBouncingActive && !CometCollabSlider.isDragging) {
+      CometCollabSlider.updateLogoPosition();
+    }
 
     masterRenderLoop = requestAnimationFrame(masterRender);
   }
@@ -1869,6 +1873,586 @@
   };
 
   // ==========================================================================
+  // COMET COLLAB SLIDER WITH BOUNCING LOGO
+  // ==========================================================================
+  const CometCollabSlider = {
+    section: null,
+    bouncingLogo: null,
+    prevBtn: null,
+    nextBtn: null,
+    dots: [],
+    imageReel: null,
+    textReel: null,
+    imageItems: [],
+    textItems: [],
+    currentIndex: 0,
+    totalItems: 5,
+    isAnimating: false,
+    isBouncingActive: false,
+
+    // Logo animation properties
+    logoX: 0,
+    logoY: 0,
+    logoVelocityX: 2, // Speed for horizontal movement (reduced from 5)
+    logoVelocityY: 1.5, // Speed for vertical movement (reduced from 4)
+    logoWidth: 0,
+    logoHeight: 0,
+    containerWidth: 0,
+    containerHeight: 0,
+    currentColorIndex: 0,
+    animationFrame: null,
+    isDragging: false,
+    dragOffsetX: 0,
+    dragOffsetY: 0,
+
+    // Muse colors (from DOT_COLORS)
+    museColors: [
+      '#5783A6', // Lunes - Blue
+      '#D54D2E', // Ares - Red
+      '#8CB07F', // Rabu - Green
+      '#F8D86A', // Thunor - Yellow
+      '#5E47A1', // Shukra - Purple
+      '#7F49A2', // Dosei - Violet
+      '#D48348', // Solis - Orange
+    ],
+
+    init() {
+      this.section = document.getElementById('comet-collab-section');
+      this.bouncingLogo = document.getElementById('comet-collab-bouncing-logo');
+      this.prevBtn = document.getElementById('slider-nav-prev');
+      this.nextBtn = document.getElementById('slider-nav-next');
+      this.dots = Array.from(document.querySelectorAll('.slider-dot'));
+      this.imageReel = document.getElementById('image-phase-reel');
+      this.textReel = document.getElementById('text-phase-reel');
+      this.particleContainer = document.getElementById('phase-transition-particles');
+
+      if (!this.section || !this.imageReel || !this.textReel) {
+        console.warn('Comet collab slider elements not found');
+        return;
+      }
+
+      this.imageItems = Array.from(this.imageReel.querySelectorAll('.phase-item'));
+      this.textItems = Array.from(this.textReel.querySelectorAll('.phase-item'));
+
+      // Initialize all items to hidden state first
+      this.imageItems.forEach(item => {
+        item.classList.remove('active');
+        gsap.set(item, { opacity: 0, y: 100, visibility: 'hidden' });
+      });
+      this.textItems.forEach(item => {
+        item.classList.remove('active');
+        gsap.set(item, { opacity: 0, y: 100, visibility: 'hidden' });
+      });
+
+      // Show first items with proper initial state
+      if (this.imageItems.length > 0) {
+        this.imageItems[0].classList.add('active');
+        gsap.set(this.imageItems[0], { opacity: 1, y: 0, visibility: 'visible' });
+      }
+      if (this.textItems.length > 0) {
+        this.textItems[0].classList.add('active');
+        gsap.set(this.textItems[0], { opacity: 1, y: 0, visibility: 'visible' });
+      }
+
+      this.initSlider();
+      this.initBouncingLogo();
+      this.initScrollDrivenPhases();
+      this.initScrollTriggers();
+    },
+
+    initSlider() {
+      // Prev/Next buttons
+      if (this.prevBtn) {
+        this.prevBtn.addEventListener('click', () => this.prevSlide());
+      }
+      if (this.nextBtn) {
+        this.nextBtn.addEventListener('click', () => this.nextSlide());
+      }
+
+      // Dot navigation
+      this.dots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+          if (!this.isAnimating) {
+            this.transitionToSlide(index);
+          }
+        });
+      });
+
+      // Keyboard navigation (arrows + number keys 1-5)
+      document.addEventListener('keydown', (e) => {
+        if (!this.isBouncingActive) return;
+
+        // Arrow keys
+        if (e.key === 'ArrowLeft') this.prevSlide();
+        if (e.key === 'ArrowRight') this.nextSlide();
+
+        // Number keys 1-5 for direct phase access
+        const numberKey = parseInt(e.key);
+        if (numberKey >= 1 && numberKey <= 5 && !this.isAnimating) {
+          this.transitionToSlide(numberKey - 1);
+        }
+      });
+
+      // Update dot states
+      this.updateDots();
+    },
+
+    initScrollDrivenPhases() {
+      // Create scroll-triggered phase transitions
+      const h = window.innerHeight;
+      const phaseDuration = SCROLL_TIMING.COMET_PHASE_DURATION;
+      const phaseStart = SCROLL_TIMING.COMET_PHASES_START;
+
+      // Create ScrollTrigger for each phase transition
+      for (let i = 0; i < SCROLL_TIMING.COMET_PHASE_COUNT; i++) {
+        const scrollStart = phaseStart + (i * phaseDuration);
+        const scrollEnd = scrollStart + phaseDuration;
+
+        ScrollTrigger.create({
+          trigger: '.comet-collab-wrapper',
+          start: () => `top+=${scrollStart}vh top`,
+          end: () => `top+=${scrollEnd}vh top`,
+          invalidateOnRefresh: true,
+          anticipatePin: 1,
+          onEnter: () => {
+            // Transitioning TO phase i
+            if (!this.isAnimating && this.currentIndex !== i) {
+              this.transitionToSlide(i, true); // true = scroll-driven (with particles)
+            }
+          },
+          onEnterBack: () => {
+            // Scrolling back, show previous phase
+            if (!this.isAnimating && this.currentIndex !== i) {
+              this.transitionToSlide(i, true);
+            }
+          }
+        });
+      }
+    },
+
+    initScrollTriggers() {
+      // Start bouncing smoothly as slider content becomes visible
+      const bounceStartPoint = SCROLL_TIMING.COMET_INTRO_PAUSE + SCROLL_TIMING.COMET_LOGO_MOVEMENT + 100;
+      ScrollTrigger.create({
+        trigger: '.comet-collab-wrapper',
+        start: `top+=${bounceStartPoint}vh top`,
+        invalidateOnRefresh: true,
+        onEnter: () => {
+          if (!this.isBouncingActive) {
+            // Position logo at bottom center (where overlay happens)
+            const spacing = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--spacing-xl')) || 64;
+            this.logoX = window.innerWidth / 2 - this.logoWidth / 2;
+            this.logoY = window.innerHeight - this.logoHeight - spacing;
+            this.bouncingLogo.style.transform = `translate(${this.logoX}px, ${this.logoY}px)`;
+            this.startBouncing();
+          }
+        },
+        onLeaveBack: () => {
+          // Stop bouncing when scrolling back up
+          this.stopBouncing();
+        }
+      });
+    },
+
+    stopBouncing() {
+      if (!this.isBouncingActive) return;
+
+      this.isBouncingActive = false;
+      this.isDragging = false;
+
+      // Cancel animation frame
+      if (this.animationFrame) {
+        cancelAnimationFrame(this.animationFrame);
+        this.animationFrame = null;
+      }
+
+      // Reset cursor
+      if (this.bouncingLogo) {
+        this.bouncingLogo.style.cursor = 'grab';
+      }
+
+      // Fade out bouncing logo
+      gsap.to(this.bouncingLogo, {
+        opacity: 0,
+        duration: 0.4,
+        ease: 'power2.in'
+      });
+    },
+
+    startBouncing() {
+      if (this.isBouncingActive || !this.bouncingLogo) return;
+      this.isBouncingActive = true;
+      this.justStartedBouncing = true; // Flag to prevent initial spark
+
+      // Enable cursor for dragging
+      this.bouncingLogo.style.cursor = 'grab';
+
+      // Fade in bouncing logo smoothly
+      gsap.to(this.bouncingLogo, {
+        opacity: 1,
+        duration: 0.6,
+        ease: 'power2.out'
+      });
+
+      // Clear the flag after a short delay (enough time for first frame)
+      setTimeout(() => {
+        this.justStartedBouncing = false;
+      }, 100);
+
+      // Animation now handled by master render loop
+    },
+
+    initBouncingLogo() {
+      if (!this.bouncingLogo) return;
+
+      // Get initial dimensions
+      this.updateLogoDimensions();
+
+      // Set random starting position (accounting for padding)
+      const padding = 20;
+      this.logoX = padding + Math.random() * Math.max(0, this.containerWidth - this.logoWidth);
+      this.logoY = padding + Math.random() * Math.max(0, this.containerHeight - this.logoHeight);
+
+      // Don't start animation yet - will be triggered by scroll
+      // this.animateLogo(); // Removed - now triggered by startBouncing()
+
+      // Add drag functionality
+      this.initDragHandlers();
+
+      // Update on resize
+      window.addEventListener('resize', () => this.updateLogoDimensions(), { passive: true });
+    },
+
+    initDragHandlers() {
+      if (!this.bouncingLogo) return;
+
+      // Mouse events
+      this.bouncingLogo.addEventListener('mousedown', (e) => this.startDrag(e));
+      window.addEventListener('mousemove', (e) => this.drag(e));
+      window.addEventListener('mouseup', () => this.stopDrag());
+
+      // Touch events
+      this.bouncingLogo.addEventListener('touchstart', (e) => this.startDrag(e), { passive: false });
+      window.addEventListener('touchmove', (e) => this.drag(e), { passive: false });
+      window.addEventListener('touchend', () => this.stopDrag());
+
+      // Prevent default drag behavior
+      this.bouncingLogo.addEventListener('dragstart', (e) => e.preventDefault());
+    },
+
+    startDrag(e) {
+      if (!this.isBouncingActive) return;
+
+      this.isDragging = true;
+      this.bouncingLogo.style.cursor = 'grabbing';
+
+      // Pause bouncing animation
+      if (this.animationFrame) {
+        cancelAnimationFrame(this.animationFrame);
+        this.animationFrame = null;
+      }
+
+      // Calculate offset from logo position to cursor/touch
+      const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+      const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+      this.dragOffsetX = clientX - this.logoX;
+      this.dragOffsetY = clientY - this.logoY;
+
+      if (e.type.includes('touch')) {
+        e.preventDefault();
+      }
+    },
+
+    drag(e) {
+      if (!this.isDragging) return;
+
+      const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+      const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+      // Update position based on cursor/touch, accounting for offset
+      const padding = 20;
+      this.logoX = Math.max(padding, Math.min(clientX - this.dragOffsetX, this.containerWidth + padding - this.logoWidth));
+      this.logoY = Math.max(padding, Math.min(clientY - this.dragOffsetY, this.containerHeight + padding - this.logoHeight));
+
+      // Update visual position
+      this.bouncingLogo.style.transform = `translate(${this.logoX}px, ${this.logoY}px)`;
+
+      if (e.type.includes('touch')) {
+        e.preventDefault();
+      }
+    },
+
+    stopDrag() {
+      if (!this.isDragging) return;
+
+      this.isDragging = false;
+      this.bouncingLogo.style.cursor = 'grab';
+
+      // Bouncing will automatically resume via master render loop
+    },
+
+    updateLogoDimensions() {
+      if (!this.bouncingLogo || !this.section) return;
+
+      // Use window dimensions for bouncing area
+      this.containerWidth = window.innerWidth;
+      this.containerHeight = window.innerHeight;
+
+      // Get actual logo dimensions
+      const logoImg = this.bouncingLogo.querySelector('img');
+      if (logoImg) {
+        this.logoWidth = logoImg.offsetWidth || 300;
+        this.logoHeight = logoImg.offsetHeight || 150;
+      } else {
+        this.logoWidth = 300;
+        this.logoHeight = 150;
+      }
+
+      // Add padding boundaries
+      const padding = 20;
+      this.containerWidth = Math.max(0, this.containerWidth - padding * 2);
+      this.containerHeight = Math.max(0, this.containerHeight - padding * 2);
+
+      // Clamp position if needed
+      this.logoX = Math.max(0, Math.min(this.logoX, this.containerWidth - this.logoWidth));
+      this.logoY = Math.max(0, Math.min(this.logoY, this.containerHeight - this.logoHeight));
+    },
+
+    updateLogoPosition() {
+      // Called by master render loop
+      if (!this.bouncingLogo || this.isDragging || !this.isBouncingActive) return;
+
+      const padding = 20;
+
+      // Update position
+      this.logoX += this.logoVelocityX;
+      this.logoY += this.logoVelocityY;
+
+      // Check boundaries and bounce
+      let bounced = false;
+      let bounceX = 0;
+      let bounceY = 0;
+
+      // Left/Right boundaries
+      if (this.logoX <= padding) {
+        this.logoX = padding;
+        this.logoVelocityX = Math.abs(this.logoVelocityX);
+        bounced = true;
+        bounceX = this.logoX + this.logoWidth / 2;
+        bounceY = this.logoY + this.logoHeight / 2;
+      } else if (this.logoX >= this.containerWidth + padding - this.logoWidth) {
+        this.logoX = this.containerWidth + padding - this.logoWidth;
+        this.logoVelocityX = -Math.abs(this.logoVelocityX);
+        bounced = true;
+        bounceX = this.logoX + this.logoWidth / 2;
+        bounceY = this.logoY + this.logoHeight / 2;
+      }
+
+      // Top/Bottom boundaries
+      if (this.logoY <= padding) {
+        this.logoY = padding;
+        this.logoVelocityY = Math.abs(this.logoVelocityY);
+        bounced = true;
+        bounceX = this.logoX + this.logoWidth / 2;
+        bounceY = this.logoY + this.logoHeight / 2;
+      } else if (this.logoY >= this.containerHeight + padding - this.logoHeight) {
+        this.logoY = this.containerHeight + padding - this.logoHeight;
+        this.logoVelocityY = -Math.abs(this.logoVelocityY);
+        bounced = true;
+        bounceX = this.logoX + this.logoWidth / 2;
+        bounceY = this.logoY + this.logoHeight / 2;
+      }
+
+      // Create sparks on bounce (but not on initial start)
+      if (bounced && !this.justStartedBouncing) {
+        this.createSparks(bounceX, bounceY);
+      }
+
+      // Apply position (depth pulse handled by CSS animation on inner image)
+      this.bouncingLogo.style.transform = `translate(${this.logoX}px, ${this.logoY}px)`;
+    },
+
+    createSparks(x, y) {
+      // Check for reduced motion preference
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) return;
+
+      // Create exactly 12 spark particles with varying sizes
+      const sparkCount = 12;
+      const color = this.museColors[this.currentColorIndex];
+
+      for (let i = 0; i < sparkCount; i++) {
+        const spark = document.createElement('div');
+        spark.className = 'spark';
+        spark.style.left = x + 'px';
+        spark.style.top = y + 'px';
+        spark.style.backgroundColor = color;
+
+        // Varying sizes: small (4px), medium (6px), large (8px), extra large (10px)
+        const sizeVariants = [4, 4, 6, 6, 6, 8, 8, 8, 10, 10, 12, 12];
+        const size = sizeVariants[i];
+        spark.style.width = size + 'px';
+        spark.style.height = size + 'px';
+
+        // Random direction for each spark
+        const angle = (Math.PI * 2 * i) / sparkCount + (Math.random() - 0.5) * 0.3;
+        const distance = 40 + Math.random() * 50;
+        const sparkX = Math.cos(angle) * distance;
+        const sparkY = Math.sin(angle) * distance;
+
+        spark.style.setProperty('--spark-x', sparkX + 'px');
+        spark.style.setProperty('--spark-y', sparkY + 'px');
+
+        document.body.appendChild(spark);
+
+        // Remove spark after animation
+        setTimeout(() => {
+          spark.remove();
+        }, 600);
+      }
+
+      // Cycle to next color for next bounce
+      this.currentColorIndex = (this.currentColorIndex + 1) % this.museColors.length;
+    },
+
+    nextSlide() {
+      if (this.isAnimating) return;
+      const nextIndex = (this.currentIndex + 1) % this.totalItems;
+      this.transitionToSlide(nextIndex);
+    },
+
+    prevSlide() {
+      if (this.isAnimating) return;
+      const prevIndex = (this.currentIndex - 1 + this.totalItems) % this.totalItems;
+      this.transitionToSlide(prevIndex);
+    },
+
+    transitionToSlide(targetIndex, scrollDriven = false) {
+      if (this.isAnimating || targetIndex === this.currentIndex) return;
+
+      this.isAnimating = true;
+      const previousIndex = this.currentIndex;
+      this.currentIndex = targetIndex;
+
+      // Create particle burst if scroll-driven
+      if (scrollDriven) {
+        this.createTransitionParticles();
+      }
+
+      // Animate image with parallax (slower movement)
+      this.animateSlideTransition(this.imageItems, previousIndex, targetIndex, 0.8);
+
+      // Animate text with slight delay and faster movement (parallax effect)
+      setTimeout(() => {
+        this.animateSlideTransition(this.textItems, previousIndex, targetIndex, 1.2);
+        this.isAnimating = false;
+        this.updateDots();
+      }, 100);
+    },
+
+    animateSlideTransition(items, fromIndex, toIndex, speedFactor = 1) {
+      // GSAP timeline for smooth transitions
+      const timeline = gsap.timeline({
+        defaults: { ease: 'power3.inOut' }
+      });
+
+      // Fade out and slide up previous item
+      if (items[fromIndex]) {
+        timeline.to(items[fromIndex], {
+          opacity: 0,
+          y: -50 * speedFactor,
+          duration: 0.4,
+          onComplete: () => {
+            items[fromIndex].classList.remove('active');
+            gsap.set(items[fromIndex], { y: 0, visibility: 'hidden' });
+          }
+        });
+      }
+
+      // Fade in and slide up new item
+      if (items[toIndex]) {
+        gsap.set(items[toIndex], { y: 50 * speedFactor, opacity: 0, visibility: 'visible' });
+        items[toIndex].classList.add('active');
+
+        timeline.to(items[toIndex], {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          ease: 'back.out(1.2)',
+        }, '-=0.2'); // Overlap slightly
+      }
+    },
+
+    createTransitionParticles() {
+      if (!this.particleContainer) return;
+
+      // Check for reduced motion
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) return;
+
+      // Create 16 burst particles in current muse color
+      const particleCount = 16;
+      const color = this.museColors[this.currentIndex % this.museColors.length];
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'phase-particle';
+        particle.style.setProperty('--particle-color', color);
+
+        // Burst outward in all directions
+        const angle = (i / particleCount) * Math.PI * 2;
+        const distance = 150 + Math.random() * 100;
+        const burstX = Math.cos(angle) * distance;
+        const burstY = Math.sin(angle) * distance;
+
+        particle.style.left = centerX + 'px';
+        particle.style.top = centerY + 'px';
+        particle.style.setProperty('--burst-x', `${burstX}px`);
+        particle.style.setProperty('--burst-y', `${burstY}px`);
+
+        // Animate with GSAP for better control
+        gsap.fromTo(particle,
+          { scale: 0, opacity: 0 },
+          {
+            scale: 1,
+            opacity: 1,
+            duration: 0.2,
+            ease: 'power2.out',
+            onComplete: () => {
+              // Burst outward
+              gsap.to(particle, {
+                x: burstX,
+                y: burstY,
+                scale: 0.3,
+                opacity: 0,
+                duration: 0.8,
+                ease: 'power2.out',
+                onComplete: () => particle.remove()
+              });
+            }
+          }
+        );
+
+        this.particleContainer.appendChild(particle);
+      }
+    },
+
+    updateDots() {
+      // Update active state on dots
+      this.dots.forEach((dot, index) => {
+        if (index === this.currentIndex) {
+          dot.classList.add('active');
+        } else {
+          dot.classList.remove('active');
+        }
+      });
+    }
+  };
+
+  // ==========================================================================
   // COMET CONNECTION LINES
   // ==========================================================================
   const CometConnections = {
@@ -2024,7 +2608,9 @@
     // Initialize comet connection lines
     CometConnections.init();
 
-    // Note: CometCollabSlider module removed - replaced with static connected images layout
+    // Initialize comet collab slider with bouncing logo (commented out - replaced with connected images)
+    // CometCollabSlider.init();
+
     // Start master render loop (consolidates all animations)
     masterRender();
   }
