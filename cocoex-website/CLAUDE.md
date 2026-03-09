@@ -160,6 +160,12 @@ Static portfolio website for cocoex e.V. - a vibrant DAO blending art, blockchai
   - Gives users time to read content
   - Smooth transition before crossfade
 
+**Shine Animation:**
+- **Scroll down** (entering from text section): Stardust shines → 1s delay → Horizon shines
+- **Scroll back** (from comet-collab-2): Horizon shines → 1s delay → Stardust shines
+- Each shine: 1.6s duration with glow effect (drop-shadow + stroke width increase)
+- Triggers every time section enters viewport in either direction
+
 **Methods Explained:**
 - **Stardust**: Artists select a cause, create work, launch fundraising campaign. Funds split between artist and organization.
 - **Horizon**: Future Lab where communities design their futures through 4 steps (Critique → Realisation), transforming vision into art and change.
@@ -168,11 +174,13 @@ Static portfolio website for cocoex e.V. - a vibrant DAO blending art, blockchai
 - WebGL gradient background (`.comet-collab-background-canvas` at z-index 1)
 - Unified starfield beneath
 - Responsive logo: `clamp(100px, 15vw, 182px)`
+- Hollow letter styling on method names (transparent fill, white stroke)
+- Sequential shine animation with glow effect
 
 **Files:**
-- HTML: `index.html:181-191`
-- CSS: `styles.css:416-490` (intro section), `styles.css:571-580` (gradient canvas)
-- JS: `main.js:1042-1078` (intro + logo animation), `main.js:1389-1516` (gradient background)
+- HTML: `index.html:190` (shine-word spans with data attributes)
+- CSS: `styles.css:416-490` (intro section), `styles.css:492-520` (shine animation), `styles.css:571-580` (gradient canvas)
+- JS: `main.js:1042-1078` (intro + logo animation), `main.js:1080-1090` (shine trigger forward), `main.js:1102-1105` (shine trigger reverse), `main.js:1389-1516` (gradient background), `main.js:1962-2009` (shine animation function)
 
 ---
 
@@ -703,7 +711,8 @@ npx serve . -l 8000
 - ✅ Orbiting muse layout (240s rotation, adaptive ellipse)
 - ✅ Interactive muse popup modals (colored aura, particles)
 - ✅ WebGL animated gradient (Muse/Comet sections)
-- ✅ Comet intro page with descending logo (280vh animation)
+- ✅ Comet intro page with descending logo (280vh animation) + 150vh bottom hold
+- ✅ Shine animation on Stardust/Horizon words (direction-aware, 1.6s duration)
 - ✅ Connected images display (5 process images)
 - ✅ Footer reveal at page end (social icons + logo)
 - ✅ Full keyboard navigation support
@@ -734,6 +743,14 @@ npx serve . -l 8000
   - Added responsive design guide with troubleshooting
   - Created comprehensive cleanup case study in skill
   - Set debug logging to false for production
+
+- ✅ **Comet Section Enhancements (March 9, 2026)**
+  - Added 150vh bottom hold in comet-collab-1 after logo descent (better pacing)
+  - Implemented shine animation on Stardust and Horizon words (1.6s glow effect)
+  - Direction-aware animation: Stardust→Horizon (scroll down), Horizon→Stardust (scroll back)
+  - Sequential timing: 1 second delay between word animations
+  - Triggers every time section enters viewport in either direction
+  - Total scroll height increased: 1570vh → 1720vh
 
 **Known Technical Debt:**
 - Connection canvas for lines between images (visual enhancement, not critical)
