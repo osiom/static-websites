@@ -15,6 +15,7 @@ This skill helps with:
 2. **WebGL Shader Development** - Custom shaders, performance optimization, multi-canvas management
 3. **Performance Optimization** - Bundle analysis, animation profiling, accessibility best practices
 4. **Static Site Patterns** - Vanilla JS architecture, CSS custom properties, responsive design
+5. **Code Cleanup & Optimization** - Remove unused code, consolidate duplicates, optimize performance WITHOUT changing working behavior
 
 ## Quick Reference
 
@@ -301,12 +302,348 @@ function resize() {
 - Lighthouse Score: 95+
 - FPS: 60fps desktop, 30fps mobile
 
+## Code Cleanup & Optimization Protocol
+
+**CRITICAL RULE:** Never change working behavior. Only remove dead code, consolidate duplicates, and optimize performance.
+
+### Pre-Cleanup Checklist
+
+Before making ANY changes:
+1. ✅ Verify feature is working correctly
+2. ✅ Test on multiple devices/browsers
+3. ✅ Document current behavior
+4. ✅ Create backup (git commit recommended)
+
+### Safe Cleanup Operations
+
+#### 1. Remove Unused CSS Selectors
+
+**Detection:**
+```bash
+# Find unused CSS classes
+grep -r "class=\"[^\"]*\"" *.html | grep -o "class=\"[^\"]*\"" | sort -u
+# Cross-reference with styles.css
+```
+
+**Safe to Remove:**
+- ✅ Classes never referenced in HTML
+- ✅ IDs never referenced in HTML or JS
+- ✅ Commented-out styles
+- ✅ Duplicate property declarations
+- ✅ Unused @media queries that don't apply
+
+**Never Remove:**
+- ❌ Classes added dynamically via JS (`.visible`, `.active`, etc.)
+- ❌ Pseudo-selectors (`:hover`, `:focus`, `:before`, `:after`)
+- ❌ ARIA-related selectors
+- ❌ Animation keyframes currently in use
+
+**Example:**
+```css
+/* ❌ Remove - never used */
+.old-header {
+  color: red;
+}
+
+/* ✅ Keep - added by JavaScript */
+.muse-popup.visible {
+  opacity: 1;
+}
+
+/* ❌ Remove - duplicate */
+.text-section {
+  padding: 2rem;
+  padding: var(--spacing-md); /* Duplicate - keep this one */
+}
+```
+
+#### 2. Remove Unused JavaScript Functions
+
+**Detection:**
+```bash
+# Find function declarations
+grep -n "function \w\+\|const \w\+ = " main.js
+
+# Cross-reference with usage
+grep -n "functionName" main.js
+```
+
+**Safe to Remove:**
+- ✅ Functions never called
+- ✅ Commented-out code blocks
+- ✅ Debug console.logs (but verify not used for production logging)
+- ✅ Unused variables
+
+**Never Remove:**
+- ❌ Event handler functions (even if not directly called)
+- ❌ Callback functions passed to libraries
+- ❌ Functions in modules that may be called externally
+- ❌ GSAP callbacks (`onEnter`, `onLeave`, etc.)
+
+**Example:**
+```javascript
+// ❌ Remove - never called
+function oldDebugFunction() {
+  console.log('debug');
+}
+
+// ✅ Keep - used as callback
+function handleResize() {
+  // Even if not directly called, used in addEventListener
+}
+
+// ❌ Remove - unused variable
+const unusedConfig = { foo: 'bar' };
+
+// ✅ Keep - used in event listener
+document.addEventListener('click', handleClick);
+```
+
+#### 3. Consolidate Duplicate Code
+
+**Pattern: Duplicate CSS Properties**
+```css
+/* Before */
+.muse-logo-image {
+  width: 300px;
+}
+@media (max-width: 768px) {
+  .muse-logo-image {
+    width: 180px;
+  }
+}
+
+/* After - use clamp() */
+.muse-logo-image {
+  width: clamp(180px, 20vw, 300px);
+}
+```
+
+**Pattern: Duplicate GLSL Code**
+```javascript
+// Before - duplicated noise function in each shader
+const shader1 = `
+  vec3 mod289(vec3 x) { ... }
+  // ... noise code
+`;
+const shader2 = `
+  vec3 mod289(vec3 x) { ... }
+  // ... noise code
+`;
+
+// After - shared utility
+const GLSL_UTILS = {
+  SIMPLEX_NOISE: `vec3 mod289(vec3 x) { ... }`
+};
+const shader1 = `${GLSL_UTILS.SIMPLEX_NOISE} void main() { ... }`;
+const shader2 = `${GLSL_UTILS.SIMPLEX_NOISE} void main() { ... }`;
+```
+
+**Pattern: Repeated Media Query Values**
+```css
+/* Before */
+@media (max-width: 768px) { .a { font-size: 14px; } }
+@media (max-width: 768px) { .b { padding: 1rem; } }
+
+/* After - consolidate */
+@media (max-width: 768px) {
+  .a { font-size: 14px; }
+  .b { padding: 1rem; }
+}
+```
+
+#### 4. Optimize Performance (No Behavior Change)
+
+**CSS Optimizations:**
+```css
+/* Before - multiple properties */
+.element {
+  margin-top: 1rem;
+  margin-right: 2rem;
+  margin-bottom: 1rem;
+  margin-left: 2rem;
+}
+
+/* After - shorthand */
+.element {
+  margin: 1rem 2rem;
+}
+
+/* Before - inefficient selector */
+div.container > div.wrapper > div.content {
+  color: white;
+}
+
+/* After - use class directly */
+.content {
+  color: white;
+}
+```
+
+**JavaScript Optimizations:**
+```javascript
+// Before - repeated DOM queries
+function updateElements() {
+  document.querySelector('.element').style.opacity = 1;
+  document.querySelector('.element').style.transform = 'scale(1)';
+}
+
+// After - cache selector
+function updateElements() {
+  const element = document.querySelector('.element');
+  element.style.opacity = 1;
+  element.style.transform = 'scale(1)';
+}
+
+// Before - unnecessary calculations in loop
+for (let i = 0; i < items.length; i++) {
+  const radius = Math.min(window.innerWidth, window.innerHeight) * 0.3;
+  items[i].style.width = radius + 'px';
+}
+
+// After - calculate once
+const radius = Math.min(window.innerWidth, window.innerHeight) * 0.3;
+for (let i = 0; i < items.length; i++) {
+  items[i].style.width = radius + 'px';
+}
+```
+
+#### 5. Clean Up Comments
+
+**Remove:**
+- ✅ Obsolete TODO comments for completed tasks
+- ✅ Debug comments (`// testing`, `// temp fix`)
+- ✅ Commented-out code blocks (if truly unused)
+- ✅ Overly verbose explanations for self-evident code
+
+**Keep:**
+- ✅ Section dividers (`/* ========== Section Name ========== */`)
+- ✅ Complex algorithm explanations
+- ✅ Browser compatibility notes
+- ✅ Warning comments about edge cases
+- ✅ Attribution comments for external code
+
+**Example:**
+```javascript
+// ❌ Remove - self-evident
+// Set the opacity to 1
+element.style.opacity = 1;
+
+// ✅ Keep - explains WHY
+// Safari requires explicit z-index for backdrop-filter to work
+element.style.zIndex = 10;
+
+// ❌ Remove - old debug code
+// console.log('x:', x, 'y:', y);
+
+// ✅ Keep - section organization
+/* ==========================================================================
+   Muse Orbit Calculation
+   ========================================================================== */
+```
+
+### Cleanup Workflow
+
+**Step-by-Step Process:**
+
+1. **Analyze** - Understand what the code does
+   ```bash
+   # Check if class is used
+   grep -r "className" . --include="*.html" --include="*.js"
+   ```
+
+2. **Test Before** - Verify current behavior works
+   - Test all interactive features
+   - Check on mobile and desktop
+   - Verify animations run smoothly
+
+3. **Make Changes** - Apply ONE cleanup at a time
+   - Don't batch multiple types of changes
+   - Keep changes atomic and reversible
+
+4. **Test After** - Verify behavior unchanged
+   - Run same tests as "Test Before"
+   - Check browser console for errors
+   - Verify no visual regressions
+
+5. **Document** - Note what was removed/changed
+   ```javascript
+   // Removed unused bouncing logo slider module (lines 1841-2617)
+   // Feature was replaced by static connected images layout
+   ```
+
+6. **Commit** - Save changes to version control
+   ```bash
+   git add .
+   git commit -m "refactor: remove unused slider module (no behavior change)"
+   ```
+
+### Red Flags - Stop and Review
+
+⚠️ **WARNING SIGNS** - If you see these, proceed with extreme caution:
+
+- Code touches DOM elements added dynamically
+- Function is passed as callback to external library
+- CSS class is manipulated via `.classList.add()`
+- Event listener attaches to dynamically created elements
+- Code runs conditionally based on user interaction
+- Style is applied based on scroll position
+- Animation relies on precise timing or sequencing
+
+### Validation Tests
+
+After cleanup, run these tests:
+
+**Visual Tests:**
+- [ ] Intro animation plays correctly
+- [ ] Text sections fade in smoothly
+- [ ] Muse orbit rotates continuously
+- [ ] Muse popup opens/closes correctly
+- [ ] Comet section displays properly
+- [ ] Footer appears at correct scroll position
+- [ ] All WebGL canvases render
+
+**Interaction Tests:**
+- [ ] Click muse images to open popup
+- [ ] Press Escape to close popup
+- [ ] Tab through focusable elements
+- [ ] Social links work
+- [ ] Touch gestures work on mobile
+
+**Performance Tests:**
+- [ ] Lighthouse score unchanged or improved
+- [ ] No console errors
+- [ ] Animations at 60fps (desktop) / 30fps (mobile)
+- [ ] Page load time unchanged or improved
+
+### Common Cleanup Opportunities
+
+**In cocoex.xyz project:**
+
+1. **CometCollabSlider Module** (main.js:1841-2617)
+   - Status: Not currently used in HTML
+   - Action: Can be removed if slider feature is deprecated
+   - Verification: Check if any HTML references `.comet-collab-bouncing-logo`
+
+2. **Unused Media Query Variables**
+   - Check for hardcoded typography in old breakpoints
+   - Consolidate with new `clamp()` approach
+
+3. **Duplicate Scroll Calculations**
+   - Look for multiple `window.scrollY` calculations
+   - Centralize in one place
+
+4. **Redundant GPU Program Switches**
+   - Cache last active WebGL program
+   - Skip `gl.useProgram()` if already active
+
 ## Resources
 
 **Documentation:**
 - `references/gsap_scroll_patterns.md` - Complete ScrollTrigger guide
 - `references/webgl_performance_guide.md` - WebGL optimization strategies
 - `references/static_site_best_practices.md` - Frontend best practices
+- `docs/responsive-design.md` - Responsive implementation guide
 
 **External:**
 - [GSAP Docs](https://greensock.com/docs/)
