@@ -104,16 +104,16 @@
     MUSE_TOTAL: 270,           // vh - total wrapper height (150 intro + 120 crossfade)
 
     // Comet section (smooth scrolling experience)
-    COMET_INTRO_PAUSE: 120,         // vh - hold intro static (extended to avoid rushed feel)
+    COMET_INTRO_PAUSE: 180,         // vh - hold intro static (increased for better pacing)
     COMET_LOGO_MOVEMENT: 280,       // vh - logo descent + text up (increased from 250vh for smoothness)
-    COMET_MOVEMENT_START: 120,      // vh - when movement begins (after intro pause)
-    COMET_CROSSFADE_START: 400,     // vh - when slider fades in (120 + 280)
+    COMET_MOVEMENT_START: 180,      // vh - when movement begins (after intro pause)
+    COMET_CROSSFADE_START: 460,     // vh - when slider fades in (180 + 280)
     COMET_CROSSFADE_DURATION: 120,  // vh - crossfade duration (increased from 100vh)
     COMET_PHASE_DURATION: 100,      // vh - scroll distance per phase (increased from 80vh for smoother transitions)
-    COMET_PHASES_START: 520,        // vh - when phase scrolling begins (after crossfade: 400 + 120)
+    COMET_PHASES_START: 580,        // vh - when phase scrolling begins (after crossfade: 460 + 120)
     COMET_PHASE_COUNT: 5,           // number of phases
     COMET_CONTENT_HOLD: 0,          // vh - no fixed hold (natural page end)
-    COMET_TOTAL: 1020               // vh - total wrapper height (120 intro + 280 movement + 120 fade + 500 phases)
+    COMET_TOTAL: 1080               // vh - total wrapper height (180 intro + 280 movement + 120 fade + 500 phases)
   };
 
   // ==========================================================================
