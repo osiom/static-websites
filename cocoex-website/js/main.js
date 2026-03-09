@@ -1077,7 +1077,7 @@
         }
       );
 
-      // Shine animation for Stardust and Horizon words
+      // Shine animation for Stardust and Horizon words (scroll down)
       ScrollTrigger.create({
         trigger: '.comet-collab-wrapper',
         start: 'top 80%',
@@ -1086,10 +1086,6 @@
         onEnter: () => {
           triggerShineAnimation(false); // Scroll down: Stardust → Horizon
           log('✨ COMET-SHINE: Stardust → Horizon animation triggered');
-        },
-        onEnterBack: () => {
-          triggerShineAnimation(true); // Scroll back: Horizon → Stardust
-          log('✨ COMET-SHINE: Horizon → Stardust animation triggered (scroll back)');
         }
       });
 
@@ -1103,6 +1099,10 @@
           invalidateOnRefresh: true,
           anticipatePin: 1,
           onEnter: () => log('🌀 COMET-OVERLAY: Intro → Connected Images'),
+          onLeaveBack: () => {
+            triggerShineAnimation(true); // Scroll back: Horizon → Stardust
+            log('✨ COMET-SHINE: Horizon → Stardust animation triggered (scroll back)');
+          }
         }
       })
       // Fade out intro page
