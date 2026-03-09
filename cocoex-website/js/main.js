@@ -1080,7 +1080,8 @@
       // Shine animation for Stardust and Horizon words
       ScrollTrigger.create({
         trigger: '.comet-collab-wrapper',
-        start: 'top 50%',
+        start: 'top 80%',
+        end: 'top 20%',
         invalidateOnRefresh: true,
         onEnter: () => {
           triggerShineAnimation(false); // Scroll down: Stardust → Horizon
