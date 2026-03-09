@@ -281,7 +281,35 @@ When requesting changes, use **visual description + DOM selector + line referenc
 ### Typography
 - **Font**: Canela (Bold 700, Regular 400) via Adobe Fonts (Typekit ID: `nvc8nhy`)
 - **Fallback**: Georgia, serif
-- **Scale**: H1 (18-48px), H2 (12-22px) across 6 breakpoints
+- **Fluid Scale**: H1 `clamp(24px, 3vw, 48px)`, H2 `clamp(14px, 1.5vw, 22px)`
+- **Responsive**: All typography uses `clamp()` for smooth scaling (320px → 4K+)
+
+### Responsive Design
+**Implementation:** Fluid design with minimal breakpoints
+**Documentation:** See `docs/responsive-design.md` for complete guide
+
+**Key Features:**
+- **Fluid Typography**: All text sizes use `clamp()` for viewport-relative scaling
+- **Responsive Logos**: Logo sizes scale with CSS variables: `--intro-logo-size`, `--muse-logo-size`, `--muse-orbit-image-size`, `--comet-logo-size`
+- **Fluid Spacing**: Spacing system scales: `--spacing-xs` through `--spacing-xl`
+- **Adaptive Orbit**: Muse orbit changes from horizontal ellipse (desktop) to vertical ellipse (mobile)
+- **Touch Optimization**: 44px+ touch targets, touch-action optimization on mobile
+
+**Breakpoints (layout-only):**
+- Tablet (≤1024px): Touch optimization
+- Mobile (≤768px): Layout adjustments, vertical ellipse orbit
+- Small (≤480px): Fine-tuning for very small screens
+
+**Orbit Behavior:**
+- **Mobile (≤768px)**: Vertical ellipse (1.6x taller) - better portrait centering
+- **Tablet (768-1024px)**: Slightly vertical (1.4x taller) - transition
+- **Desktop (>1024px)**: Horizontal ellipse (1.8x wider) - wide sweep
+
+**Benefits:**
+- ~200 fewer CSS lines vs. fixed breakpoint approach
+- Smooth transitions without jumps between breakpoints
+- Future-proof for any screen size
+- Better performance with native browser scaling
 
 ### WebGL Resources
 - **Active Canvases**: 4 total
