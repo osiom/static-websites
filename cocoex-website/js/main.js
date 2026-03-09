@@ -1979,32 +1979,32 @@
 
       setTimeout(() => {
         stardustWord.classList.add('shine-active');
-      }, 900); // Shorter delay between animations
+      }, 1000); // 1 second delay between animations
 
       // Clean up
       setTimeout(() => {
         horizonWord.classList.remove('shine-active');
-      }, 800);
+      }, 1600);
 
       setTimeout(() => {
         stardustWord.classList.remove('shine-active');
-      }, 1700); // 900ms delay + 800ms animation
+      }, 2600); // 1000ms delay + 1600ms animation
     } else {
       // Scrolling down: Stardust shines first, then Horizon
       stardustWord.classList.add('shine-active');
 
       setTimeout(() => {
         horizonWord.classList.add('shine-active');
-      }, 900); // Shorter delay between animations
+      }, 1000); // 1 second delay between animations
 
       // Clean up
       setTimeout(() => {
         stardustWord.classList.remove('shine-active');
-      }, 800);
+      }, 1600);
 
       setTimeout(() => {
         horizonWord.classList.remove('shine-active');
-      }, 1700); // 900ms delay + 800ms animation
+      }, 2600); // 1000ms delay + 1600ms animation
     }
   }
 

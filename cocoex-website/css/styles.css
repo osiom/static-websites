@@ -497,7 +497,7 @@ img {
 }
 
 .shine-word.shine-active {
-  animation: shine-glow 0.8s ease-out;
+  animation: shine-glow 1.6s ease-out;
 }
 
 @keyframes shine-glow {
