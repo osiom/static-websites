@@ -1083,12 +1083,12 @@
         start: 'top 50%',
         invalidateOnRefresh: true,
         onEnter: () => {
-          triggerShineAnimation();
+          triggerShineAnimation(false); // Scroll down: Stardust → Horizon
           log('✨ COMET-SHINE: Stardust → Horizon animation triggered');
         },
         onEnterBack: () => {
-          triggerShineAnimation();
-          log('✨ COMET-SHINE: Stardust → Horizon animation triggered (scroll back)');
+          triggerShineAnimation(true); // Scroll back: Horizon → Stardust
+          log('✨ COMET-SHINE: Horizon → Stardust animation triggered (scroll back)');
         }
       });
 
@@ -1959,7 +1959,7 @@
   // ==========================================================================
   // SHINE ANIMATION - STARDUST & HORIZON
   // ==========================================================================
-  function triggerShineAnimation() {
+  function triggerShineAnimation(reverse = false) {
     const stardustWord = document.querySelector('[data-shine="stardust"]');
     const horizonWord = document.querySelector('[data-shine="horizon"]');
 
@@ -1973,22 +1973,39 @@
     void stardustWord.offsetWidth;
     void horizonWord.offsetWidth;
 
-    // Stardust shines immediately
-    stardustWord.classList.add('shine-active');
-
-    // Horizon shines after 1.5 seconds
-    setTimeout(() => {
+    if (reverse) {
+      // Scrolling back: Horizon shines first, then Stardust
       horizonWord.classList.add('shine-active');
-    }, 1500);
 
-    // Clean up animation classes after completion
-    setTimeout(() => {
-      stardustWord.classList.remove('shine-active');
-    }, 1200);
+      setTimeout(() => {
+        stardustWord.classList.add('shine-active');
+      }, 900); // Shorter delay between animations
 
-    setTimeout(() => {
-      horizonWord.classList.remove('shine-active');
-    }, 2700); // 1500ms delay + 1200ms animation
+      // Clean up
+      setTimeout(() => {
+        horizonWord.classList.remove('shine-active');
+      }, 800);
+
+      setTimeout(() => {
+        stardustWord.classList.remove('shine-active');
+      }, 1700); // 900ms delay + 800ms animation
+    } else {
+      // Scrolling down: Stardust shines first, then Horizon
+      stardustWord.classList.add('shine-active');
+
+      setTimeout(() => {
+        horizonWord.classList.add('shine-active');
+      }, 900); // Shorter delay between animations
+
+      // Clean up
+      setTimeout(() => {
+        stardustWord.classList.remove('shine-active');
+      }, 800);
+
+      setTimeout(() => {
+        horizonWord.classList.remove('shine-active');
+      }, 1700); // 900ms delay + 800ms animation
+    }
   }
 
   // ==========================================================================
