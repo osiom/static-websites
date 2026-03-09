@@ -85,35 +85,35 @@
   };
 
   // ==========================================================================
-  // SCROLL TIMING CONSTANTS
+  // SCROLL TIMING CONSTANTS (OPTIMIZED FOR SMOOTH 60FPS)
   // ==========================================================================
   const SCROLL_TIMING = {
     // Intro section (400vh total)
     INTRO_TOTAL: 400,
-    INTRO_PHASE1_END: 0.40,    // 40% = 160vh - orbit animation
-    INTRO_PHASE3_START: 0.40,  // 40% = 160vh - constellation explosion starts
+    INTRO_PHASE1_END: 0.40,    // 40% = 160vh - orbit animation END
+    INTRO_PHASE2_TEXT: 0.50,   // 50% = 200vh - transition text "art as infrastructure for change"
+    INTRO_PHASE3_START: 0.50,  // 50% = 200vh - constellation explosion starts
 
-    // Text section word highlights (optimized for fluidity)
-    TEXT_HIGHLIGHT_START: 0.5,  // viewport offset to start first highlight
-    WORD_HIGHLIGHT_DURATIONS: [0.8, 1.0, 0.8], // vh per word (smoother pacing - total 2.6vh)
+    // Text section (simplified - no word highlighting)
+    TEXT_SECTION_HEIGHT: 150,  // vh - total height for text section
 
-    // Muse section (optimized for fluid transitions)
-    MUSE_INTRO_HOLD: 100,      // vh - hold intro before transition
-    MUSE_CROSSFADE: 80,        // vh - smooth crossfade
+    // Muse section (extended intro hold)
+    MUSE_INTRO_HOLD: 150,      // vh - hold intro before transition (extended for better pacing)
+    MUSE_CROSSFADE: 120,       // vh - smoother crossfade (increased from 100vh)
     MUSE_CONTENT_HOLD: 0,      // vh - no additional hold (content visible during crossfade)
-    MUSE_TOTAL: 180,           // vh - total wrapper height (100 intro + 80 crossfade)
+    MUSE_TOTAL: 270,           // vh - total wrapper height (150 intro + 120 crossfade)
 
-    // Comet section (optimized for smooth scrolling experience)
-    COMET_INTRO_PAUSE: 80,          // vh - hold intro static
-    COMET_LOGO_MOVEMENT: 150,       // vh - logo descent + text up
-    COMET_MOVEMENT_START: 80,       // vh - when movement begins (after intro pause)
-    COMET_CROSSFADE_START: 230,     // vh - when slider fades in (80 + 150)
-    COMET_CROSSFADE_DURATION: 120,  // vh - crossfade duration
-    COMET_PHASE_DURATION: 70,       // vh - scroll distance per phase (optimized for responsiveness)
-    COMET_PHASES_START: 350,        // vh - when phase scrolling begins (after crossfade)
+    // Comet section (smooth scrolling experience)
+    COMET_INTRO_PAUSE: 120,         // vh - hold intro static (extended to avoid rushed feel)
+    COMET_LOGO_MOVEMENT: 280,       // vh - logo descent + text up (increased from 250vh for smoothness)
+    COMET_MOVEMENT_START: 120,      // vh - when movement begins (after intro pause)
+    COMET_CROSSFADE_START: 400,     // vh - when slider fades in (120 + 280)
+    COMET_CROSSFADE_DURATION: 120,  // vh - crossfade duration (increased from 100vh)
+    COMET_PHASE_DURATION: 100,      // vh - scroll distance per phase (increased from 80vh for smoother transitions)
+    COMET_PHASES_START: 520,        // vh - when phase scrolling begins (after crossfade: 400 + 120)
     COMET_PHASE_COUNT: 5,           // number of phases
     COMET_CONTENT_HOLD: 0,          // vh - no fixed hold (natural page end)
-    COMET_TOTAL: 700                // vh - total wrapper height (80 intro + 150 movement + 120 fade + 350 phases)
+    COMET_TOTAL: 1020               // vh - total wrapper height (120 intro + 280 movement + 120 fade + 500 phases)
   };
 
   // ==========================================================================
@@ -199,10 +199,10 @@
     dotWhite: document.getElementById('dot-white'),
     dotBlack: document.getElementById('dot-black'),
     finalDot: document.getElementById('final-dot'),
+    transitionText: document.getElementById('transition-text'),
     constCanvas: document.getElementById('constellation-canvas'),
     revealText: document.getElementById('reveal-text'),
     introSection: document.querySelector('.intro'),
-    highlightWords: document.querySelectorAll('.reveal-text em[data-highlight]'),
     textSectionWrapper: document.querySelector('.text-section-wrapper'),
   };
 
@@ -217,11 +217,78 @@
   let phase2Started = false;
   let startTime = Date.now();
   let program, posAttr, resUniform, timeUniform, pulseUniform, buffer;
-  let currentHighlight = 0; // Track which word is currently highlighted (0 = none, 1-3 = words)
   let pulseValue = 0; // Big bang pulse effect (0 = no pulse, 0-1 = animating)
   let pulseTriggered = false; // Track if pulse has been triggered
   let constellationRotation = 0; // Z-axis rotation angle in radians
   let masterRenderLoop = null; // Consolidated render loop reference
+
+  // ==========================================================================
+  // DEBUG SYSTEM - Set to true to enable logging
+  // ==========================================================================
+  const DEBUG_ENABLED = true; // Change to false to disable all logging
+
+  function log(message) {
+    if (!DEBUG_ENABLED) return;
+
+    // Try multiple sources for scroll position
+    const scrollY = window.scrollY ||
+                    window.pageYOffset ||
+                    document.documentElement.scrollTop ||
+                    document.body.scrollTop || 0;
+
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    const scrollHeight = Math.max(
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight
+    );
+
+    const vh = (scrollY / viewportHeight).toFixed(2);
+    const maxScroll = scrollHeight - viewportHeight;
+    const pagePercent = maxScroll > 0 ? ((scrollY / maxScroll) * 100).toFixed(1) : '0.0';
+
+    // Determine section based on vh
+    const vhNum = parseFloat(vh);
+    const section = vhNum < 4 ? 'INTRO' : vhNum < 7.5 ? 'TEXT' : vhNum < 10 ? 'MUSE' : 'COMET';
+
+    console.log(`[${vh}vh | ${pagePercent}% | ${scrollY}px | ${section}] ${message}`);
+  }
+
+  // Track scroll position every 0.5vh for reference
+  if (DEBUG_ENABLED) {
+    let lastLoggedVh = -1;
+    let scrollEventCount = 0;
+
+    window.addEventListener('scroll', () => {
+      scrollEventCount++;
+
+      // Try all scroll position sources
+      const scrollY = window.scrollY ||
+                      window.pageYOffset ||
+                      document.documentElement.scrollTop ||
+                      document.body.scrollTop || 0;
+
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const scrollHeight = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight
+      );
+      const vh = (scrollY / viewportHeight).toFixed(2);
+      const vhNum = parseFloat(vh);
+      const maxScroll = scrollHeight - viewportHeight;
+      const pagePercent = maxScroll > 0 ? ((scrollY / maxScroll) * 100).toFixed(1) : '0.0';
+
+      // Debug: Log first 3 scroll events to diagnose
+      if (scrollEventCount <= 3) {
+        console.log(`DEBUG: Scroll event #${scrollEventCount} - scrollY=${scrollY}, window.scrollY=${window.scrollY}, docElement.scrollTop=${document.documentElement.scrollTop}`);
+      }
+
+      if (Math.abs(vhNum - lastLoggedVh) >= 0.5) {
+        const section = vhNum < 4 ? 'INTRO' : vhNum < 7.5 ? 'TEXT' : vhNum < 10 ? 'MUSE' : 'COMET';
+        console.log(`>> Scroll: ${vh}vh | ${pagePercent}% | Section: ${section}`);
+        lastLoggedVh = vhNum;
+      }
+    }, { passive: true });
+  }
 
   // ==========================================================================
   // UTILITY FUNCTIONS
@@ -387,10 +454,12 @@
   }
 
   // ==========================================================================
-  // RESIZE HANDLER
+  // RESIZE HANDLER (OPTIMIZED DPR FOR PERFORMANCE)
   // ==========================================================================
   function resize() {
-    const dpr = window.devicePixelRatio || 1;
+    // Cap DPR on mobile for better performance (prevents 3x scaling on high-end phones)
+    const baseDPR = window.devicePixelRatio || 1;
+    const dpr = isMobile() ? Math.min(baseDPR, 2) : baseDPR;
     const w = window.innerWidth;
     const h = window.innerHeight;
 
@@ -403,7 +472,10 @@
     elements.constCanvas.style.width = w + 'px';
     elements.constCanvas.style.height = h + 'px';
 
-    initFireworkDots();
+    // Only init firework dots if phase3 has already started (don't init on page load)
+    if (phase2Started) {
+      initFireworkDots();
+    }
     updatePositions();
   }
 
@@ -516,16 +588,20 @@
   // UPDATE FIREWORK DOTS
   // ==========================================================================
   function updateFireworkDots(progress, centerX, centerY) {
-    const dpr = window.devicePixelRatio || 1;
+    // Cap DPR on mobile for performance (consistent with resize handler)
+    const baseDPR = window.devicePixelRatio || 1;
+    const dpr = isMobile() ? Math.min(baseDPR, 2) : baseDPR;
     const w = window.innerWidth;
     const h = window.innerHeight;
 
+    // Save context state and apply transform
+    constCtx.save();
     constCtx.clearRect(0, 0, elements.constCanvas.width, elements.constCanvas.height);
 
     const explosionEnd = 0.4;
     const settleStart = 0.35;
 
-    // Update dot positions with Z-axis rotation
+    // Update dot positions (without manual rotation - let CSS handle it)
     fireworkDots.forEach((dot, i) => {
       let x, y;
 
@@ -547,16 +623,7 @@
         y = midY + (dot.targetY - midY) * settleProgress;
       }
 
-      // Apply Z-axis rotation around center
-      if (constellationRotation !== 0) {
-        const relX = x - centerX;
-        const relY = y - centerY;
-        const cos = Math.cos(constellationRotation);
-        const sin = Math.sin(constellationRotation);
-        x = centerX + relX * cos - relY * sin;
-        y = centerY + relX * sin + relY * cos;
-      }
-
+      // Store positions without manual rotation (CSS transform handles rotation)
       dot.x = x;
       dot.y = y;
 
@@ -659,13 +726,17 @@
       constCtx.fillStyle = color.hex;
       constCtx.globalAlpha = zOpacity;
       constCtx.fill();
-      constCtx.globalAlpha = 1;
     });
+
+    // Restore context state (ensures clean slate for next frame)
+    constCtx.restore();
   }
 
   // ==========================================================================
-  // MASTER RENDER LOOP (CONSOLIDATED)
+  // MASTER RENDER LOOP (CONSOLIDATED & OPTIMIZED)
   // ==========================================================================
+  let lastActiveProgram = null; // Cache active WebGL program to avoid redundant switches
+
   function masterRender() {
     const time = (Date.now() - startTime) / 1000;
 
@@ -677,40 +748,55 @@
       }
     }
 
-    // Render intro WebGL background
+    // Render intro WebGL background (optimized with state caching)
     if (gl && program) {
-      gl.useProgram(program);
-      gl.enableVertexAttribArray(posAttr);
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.vertexAttribPointer(posAttr, 2, gl.FLOAT, false, 0, 0);
+      if (lastActiveProgram !== program) {
+        gl.useProgram(program);
+        gl.enableVertexAttribArray(posAttr);
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.vertexAttribPointer(posAttr, 2, gl.FLOAT, false, 0, 0);
+        lastActiveProgram = program;
+      }
       gl.uniform2f(resUniform, elements.bgCanvas.width, elements.bgCanvas.height);
       gl.uniform1f(timeUniform, time);
       gl.uniform1f(pulseUniform, pulseValue);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
-    // Render Muse background
+    // Render Muse background (batch uniforms, minimize state changes)
     if (MuseBackground.gl && MuseBackground.program) {
-      MuseBackground.gl.useProgram(MuseBackground.program);
-      MuseBackground.gl.uniform2f(MuseBackground.resUniform, MuseBackground.canvas.width, MuseBackground.canvas.height);
-      MuseBackground.gl.uniform1f(MuseBackground.timeUniform, time);
-      MuseBackground.gl.drawArrays(MuseBackground.gl.TRIANGLES, 0, 6);
+      const museGL = MuseBackground.gl;
+      if (lastActiveProgram !== MuseBackground.program) {
+        museGL.useProgram(MuseBackground.program);
+        lastActiveProgram = MuseBackground.program;
+      }
+      museGL.uniform2f(MuseBackground.resUniform, MuseBackground.canvas.width, MuseBackground.canvas.height);
+      museGL.uniform1f(MuseBackground.timeUniform, time);
+      museGL.drawArrays(museGL.TRIANGLES, 0, 6);
     }
 
-    // Render Unified Starfield
+    // Render Unified Starfield (batch uniforms, minimize state changes)
     if (UnifiedStarfield.gl && UnifiedStarfield.program) {
-      UnifiedStarfield.gl.useProgram(UnifiedStarfield.program);
-      UnifiedStarfield.gl.uniform2f(UnifiedStarfield.resUniform, UnifiedStarfield.canvas.width, UnifiedStarfield.canvas.height);
-      UnifiedStarfield.gl.uniform1f(UnifiedStarfield.timeUniform, time);
-      UnifiedStarfield.gl.drawArrays(UnifiedStarfield.gl.TRIANGLES, 0, 6);
+      const starGL = UnifiedStarfield.gl;
+      if (lastActiveProgram !== UnifiedStarfield.program) {
+        starGL.useProgram(UnifiedStarfield.program);
+        lastActiveProgram = UnifiedStarfield.program;
+      }
+      starGL.uniform2f(UnifiedStarfield.resUniform, UnifiedStarfield.canvas.width, UnifiedStarfield.canvas.height);
+      starGL.uniform1f(UnifiedStarfield.timeUniform, time);
+      starGL.drawArrays(starGL.TRIANGLES, 0, 6);
     }
 
-    // Render Comet background
+    // Render Comet background (batch uniforms, minimize state changes)
     if (CometCollabBackground.gl && CometCollabBackground.program) {
-      CometCollabBackground.gl.useProgram(CometCollabBackground.program);
-      CometCollabBackground.gl.uniform2f(CometCollabBackground.resUniform, CometCollabBackground.canvas.width, CometCollabBackground.canvas.height);
-      CometCollabBackground.gl.uniform1f(CometCollabBackground.timeUniform, time);
-      CometCollabBackground.gl.drawArrays(CometCollabBackground.gl.TRIANGLES, 0, 6);
+      const cometGL = CometCollabBackground.gl;
+      if (lastActiveProgram !== CometCollabBackground.program) {
+        cometGL.useProgram(CometCollabBackground.program);
+        lastActiveProgram = CometCollabBackground.program;
+      }
+      cometGL.uniform2f(CometCollabBackground.resUniform, CometCollabBackground.canvas.width, CometCollabBackground.canvas.height);
+      cometGL.uniform1f(CometCollabBackground.timeUniform, time);
+      cometGL.drawArrays(cometGL.TRIANGLES, 0, 6);
     }
 
     // Update Muse orbit positions
@@ -775,6 +861,7 @@
       rotation: CONFIG.totalRotations * 360
     };
 
+    let lastOrbitLog = -1;
     gsap.to(orbitState, {
       progress: 1,
       logoSize: () => getResponsiveValue(CONFIG.logoMaxSize, CONFIG.logoMaxSizeMobile),
@@ -786,14 +873,45 @@
         end: () => `top+=${introScrollHeight * CONFIG.phase1End}px top`,
         scrub: true,
         invalidateOnRefresh: true,
+        onEnter: () => log('🎯 INTRO-PHASE1 START: Orbiting dots + logo rotation'),
         onUpdate: () => {
           updateOrbitPositions(orbitState);
-        }
+          if (Math.abs(orbitState.progress - lastOrbitLog) > 0.25) {
+            log(`ORBIT progress ${(orbitState.progress * 100).toFixed(0)}%`);
+            lastOrbitLog = orbitState.progress;
+          }
+        },
+        onLeave: () => log('ORBIT complete')
       }
     });
 
+    // Transition text: appears at 76% orbit progress, fades out when explosion starts
+    const transitionTextStart = CONFIG.phase1End * 0.76; // 76% of orbit animation (30.4% of intro)
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '.scroll-container',
+        start: () => `top+=${introScrollHeight * transitionTextStart}px top`,
+        end: () => `top+=${introScrollHeight * SCROLL_TIMING.INTRO_PHASE2_TEXT}px top`,
+        scrub: true,
+        invalidateOnRefresh: true,
+        onEnter: () => log('📝 TRANSITION-TEXT: "art as infrastructure for change" (orbit 76%)'),
+      }
+    })
+    .fromTo(elements.transitionText,
+      { opacity: 0 },
+      { opacity: 1, duration: 0.4, ease: 'power2.out' }
+    )
+    .to(elements.transitionText,
+      { opacity: 1, duration: 0.3 }, // Hold visible
+      '+=0'
+    )
+    .to(elements.transitionText,
+      { opacity: 0, duration: 0.3, ease: 'power2.in' }
+    );
+
     // Phase 3: Constellation explosion animation
     const phase3State = { progress: 0 };
+    let lastExplosionLog = -1;
     gsap.to(phase3State, {
       progress: 1,
       ease: 'none',
@@ -803,112 +921,57 @@
         end: () => `top+=${introScrollHeight * CONFIG.phase3End}px top`,
         scrub: true,
         invalidateOnRefresh: true,
+        onEnter: () => log('🎯 INTRO-PHASE3 START: Constellation explosion + big bang pulse'),
         onUpdate: () => {
           updateConstellationExplosion(phase3State.progress);
-        }
+          if (Math.abs(phase3State.progress - lastExplosionLog) > 0.25) {
+            log(`EXPLOSION progress ${(phase3State.progress * 100).toFixed(0)}%`);
+            lastExplosionLog = phase3State.progress;
+          }
+        },
+        onLeave: () => log('EXPLOSION complete')
       }
     });
 
-    // Text reveal (cleaner, no blur)
+    // Text reveal (simplified - just fade in, no highlighting)
     gsap.timeline({
       scrollTrigger: {
         trigger: '.text-section-wrapper',
-        start: () => `top+=${-h * 0.3}px top`,
-        end: () => `top+=${h * 0.2}px top`,
+        start: 'top 80%',
+        end: 'bottom 60%',
         scrub: true,
         invalidateOnRefresh: true,
+        onEnter: () => log('🎯 TEXT-REVEAL START: Mission text fading in'),
+        onLeave: () => log('TEXT fully visible')
       }
     })
     .fromTo(elements.revealText,
       { opacity: 0 },
-      { opacity: 1, ease: 'none' }
+      { opacity: 1, ease: 'power2.out' }
     );
 
-    // Word highlights - batched into single timeline with variable durations
-    const totalDuration = SCROLL_TIMING.WORD_HIGHLIGHT_DURATIONS.reduce((sum, d) => sum + d, 0);
-
-    const highlightTimeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: '.scroll-container',
-        start: () => `top+=${textSectionTop + h * 0.5}px top`,
-        end: () => `top+=${textSectionTop + h * 0.5 + h * totalDuration}px top`,
-        scrub: true,
-        invalidateOnRefresh: true,
-        anticipatePin: 1, // Smooth scroll buffering
-      }
-    });
-
-    // Calculate cumulative scroll positions for each word (normalized 0-1)
-    let cumulativeProgress = 0;
-    elements.highlightWords.forEach((word, index) => {
-      const wordNum = parseInt(word.getAttribute('data-highlight'));
-      const duration = SCROLL_TIMING.WORD_HIGHLIGHT_DURATIONS[wordNum - 1] || 1;
-      const normalizedDuration = duration / totalDuration; // Convert to 0-1 range
-
-      // Add label for this word's start
-      highlightTimeline.addLabel(`word${wordNum}Start`, cumulativeProgress);
-
-      // Fade in highlight
-      highlightTimeline.to(word, {
-        onStart: () => {
-          currentHighlight = wordNum;
-          word.classList.add('highlight-active');
-        },
-        duration: 0.01,
-      }, cumulativeProgress);
-
-      // Hold highlight
-      highlightTimeline.to({}, { duration: normalizedDuration - 0.02 }, cumulativeProgress + 0.01);
-
-      // Fade out highlight
-      highlightTimeline.to(word, {
-        onComplete: () => {
-          word.classList.remove('highlight-active');
-          if (wordNum === elements.highlightWords.length) currentHighlight = 0;
-        },
-        duration: 0.01,
-      }, cumulativeProgress + normalizedDuration - 0.01);
-
-      cumulativeProgress += normalizedDuration;
-    });
-
-    // Constellation rotation during word highlights (optimized with CSS transform)
-    gsap.to(elements.constCanvas, {
-      rotation: 8.6, // 15 degrees in rotation units (Math.PI * 0.15 * 180 / Math.PI ≈ 8.6 degrees)
-      transformOrigin: 'center center',
-      ease: 'none',
-      scrollTrigger: {
-        trigger: '.text-section-wrapper',
-        start: () => `top+=${h * 0.5}px top`,
-        end: () => `top+=${h * 0.5 + h * totalDuration}px top`,
-        scrub: true,
-        invalidateOnRefresh: true,
-        anticipatePin: 1,
-        onUpdate: (self) => {
-          // Still track rotation value for potential future use
-          constellationRotation = self.progress * Math.PI * 0.15;
-        }
-      }
-    });
-
-    // Footer reveal at end of scroll (only at very bottom of page)
+    // Footer reveal when connected images become visible
     const socialLinks = document.querySelector('.social-links');
     const footerLogo = document.querySelector('.footer-logo');
+    const cometConnectedContent = document.querySelector('.comet-collab-connected-content');
 
-    ScrollTrigger.create({
-      trigger: '.comet-collab-section',
-      start: 'bottom-=20% bottom',
-      invalidateOnRefresh: true,
-      anticipatePin: 1,
-      onEnter: () => {
-        socialLinks?.classList.add('visible');
-        footerLogo?.classList.add('visible');
-      },
-      onLeaveBack: () => {
-        socialLinks?.classList.remove('visible');
-        footerLogo?.classList.remove('visible');
-      }
-    });
+    if (cometConnectedContent) {
+      ScrollTrigger.create({
+        trigger: '.comet-collab-wrapper',
+        start: 'top+=300vh top', // When connected images start to appear
+        invalidateOnRefresh: true,
+        anticipatePin: 1,
+        onEnter: () => {
+          socialLinks?.classList.add('visible');
+          footerLogo?.classList.add('visible');
+          log('👣 FOOTER: Visible with connected images');
+        },
+        onLeaveBack: () => {
+          socialLinks?.classList.remove('visible');
+          footerLogo?.classList.remove('visible');
+        }
+      });
+    }
 
     // Muse intro page overlay transition
     const museIntroPage = document.getElementById('muse-intro-page');
@@ -935,6 +998,7 @@
             scrub: true,
             invalidateOnRefresh: true,
             anticipatePin: 1,
+            onEnter: () => log('🎯 MUSE-INTRO: Fading in')
           }
         }
       );
@@ -948,6 +1012,8 @@
           scrub: true,
           invalidateOnRefresh: true,
           anticipatePin: 1,
+          onEnter: () => log('🌀 MUSE-CROSSFADE: intro → orbiting'),
+          onLeave: () => log('🎯 MUSE-ORBITING: Active (240s rotation)')
         }
       })
       // Fade out intro logo and text
@@ -976,14 +1042,11 @@
       );
     }
 
-    // Comet Collab intro page overlay transition
+    // Comet Collab intro page and connected images overlay
     const cometIntroPage = document.getElementById('comet-collab-intro');
-    const cometIntroLogo = document.querySelector('.comet-collab-intro-logo');
-    const cometIntroContent = document.querySelector('.comet-collab-intro-content');
-    const cometSliderContent = document.querySelector('.comet-collab-slider-content');
-    const cometStaticLogo = document.getElementById('comet-collab-static-logo');
+    // cometConnectedContent already declared above at line 956
 
-    if (cometIntroPage && cometSliderContent) {
+    if (cometIntroPage && cometConnectedContent) {
       // Hide constellation canvas when entering comet section
       gsap.fromTo(elements.constCanvas,
         { opacity: 1 },
@@ -1012,54 +1075,21 @@
             scrub: true,
             invalidateOnRefresh: true,
             anticipatePin: 1,
+            onEnter: () => log('🎯 COMET-INTRO: Fading in')
           }
         }
       );
 
-      // Logo moves DOWN from top to bottom during movement phase
-      gsap.fromTo(cometIntroLogo,
-        { y: 0 },
-        {
-          y: 'calc(100vh - var(--spacing-xl) - var(--spacing-xl) - 91px)', // Move to bottom
-          scrollTrigger: {
-            trigger: '.comet-collab-wrapper',
-            start: `top+=${SCROLL_TIMING.COMET_MOVEMENT_START}vh top`,
-            end: `top+=${SCROLL_TIMING.COMET_MOVEMENT_START + SCROLL_TIMING.COMET_LOGO_MOVEMENT}vh top`,
-            scrub: true,
-            invalidateOnRefresh: true,
-            anticipatePin: 1,
-          }
-        }
-      );
-
-      // Text content moves UP off screen during movement phase
-      gsap.fromTo(cometIntroContent,
-        { y: 0 },
-        {
-          y: -300,
-          scrollTrigger: {
-            trigger: '.comet-collab-wrapper',
-            start: `top+=${SCROLL_TIMING.COMET_MOVEMENT_START}vh top`,
-            end: `top+=${SCROLL_TIMING.COMET_MOVEMENT_START + SCROLL_TIMING.COMET_LOGO_MOVEMENT}vh top`,
-            scrub: true,
-            invalidateOnRefresh: true,
-            anticipatePin: 1,
-          }
-        }
-      );
-
-      // Crossfade: intro fades out while slider fades in
-      const cometCrossfadeStart = SCROLL_TIMING.COMET_CROSSFADE_START;
-      const cometCrossfadeEnd = SCROLL_TIMING.COMET_CROSSFADE_START + SCROLL_TIMING.COMET_CROSSFADE_DURATION;
-
+      // Crossfade: intro fades out while connected images fade in
       gsap.timeline({
         scrollTrigger: {
           trigger: '.comet-collab-wrapper',
-          start: `top+=${cometCrossfadeStart}vh top`,
-          end: `top+=${cometCrossfadeEnd}vh top`,
+          start: 'top+=300vh top', // After intro holds for 300vh
+          end: 'top+=650vh top', // 350vh crossfade duration (much slower)
           scrub: true,
           invalidateOnRefresh: true,
           anticipatePin: 1,
+          onEnter: () => log('🌀 COMET-OVERLAY: Intro → Connected Images'),
         }
       })
       // Fade out intro page
@@ -1068,8 +1098,8 @@
         { opacity: 0, ease: 'none' },
         0
       )
-      // Fade in slider content
-      .fromTo(cometSliderContent,
+      // Fade in connected images
+      .fromTo(cometConnectedContent,
         { opacity: 0 },
         { opacity: 1, ease: 'none' },
         0
@@ -2419,6 +2449,78 @@
   };
 
   // ==========================================================================
+  // COMET CONNECTION LINES
+  // ==========================================================================
+  const CometConnections = {
+    canvas: null,
+    ctx: null,
+    imageItems: [],
+
+    init() {
+      this.canvas = document.getElementById('comet-connection-canvas');
+      if (!this.canvas) return;
+
+      this.ctx = this.canvas.getContext('2d');
+      this.imageItems = Array.from(document.querySelectorAll('.comet-image-item'));
+
+      if (this.imageItems.length === 0) return;
+
+      this.resize();
+      this.draw();
+
+      // Redraw on window resize
+      window.addEventListener('resize', debounce(() => {
+        this.resize();
+        this.draw();
+      }, 150), { passive: true });
+    },
+
+    resize() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = this.canvas.getBoundingClientRect();
+      this.canvas.width = rect.width * dpr;
+      this.canvas.height = rect.height * dpr;
+      this.ctx.scale(dpr, dpr);
+      this.canvas.style.width = rect.width + 'px';
+      this.canvas.style.height = rect.height + 'px';
+    },
+
+    draw() {
+      if (!this.ctx || this.imageItems.length === 0) return;
+
+      // Clear canvas
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+      // Set line style (white, thin line like constellation)
+      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+      this.ctx.lineWidth = 1;
+      this.ctx.lineCap = 'round';
+
+      // Draw lines connecting images in sequence (0 → 1 → 2 → 3 → 4)
+      for (let i = 0; i < this.imageItems.length - 1; i++) {
+        const current = this.imageItems[i];
+        const next = this.imageItems[i + 1];
+
+        // Get center positions of each image
+        const currentRect = current.getBoundingClientRect();
+        const nextRect = next.getBoundingClientRect();
+        const containerRect = this.canvas.getBoundingClientRect();
+
+        const x1 = currentRect.left + currentRect.width / 2 - containerRect.left;
+        const y1 = currentRect.top + currentRect.height / 2 - containerRect.top;
+        const x2 = nextRect.left + nextRect.width / 2 - containerRect.left;
+        const y2 = nextRect.top + nextRect.height / 2 - containerRect.top;
+
+        // Draw line
+        this.ctx.beginPath();
+        this.ctx.moveTo(x1, y1);
+        this.ctx.lineTo(x2, y2);
+        this.ctx.stroke();
+      }
+    }
+  };
+
+  // ==========================================================================
   // INITIALIZATION
   // ==========================================================================
   function setInitialState() {
@@ -2499,8 +2601,11 @@
     // Initialize comet collab phases background
     CometCollabBackground.init();
 
-    // Initialize comet collab slider with bouncing logo
-    CometCollabSlider.init();
+    // Initialize comet connection lines
+    CometConnections.init();
+
+    // Initialize comet collab slider with bouncing logo (commented out - replaced with connected images)
+    // CometCollabSlider.init();
 
     // Start master render loop (consolidates all animations)
     masterRender();

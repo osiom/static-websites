@@ -19,9 +19,9 @@ The cocoex website is a scroll-driven interactive experience built with modern w
 - **Scroll-Driven**: All animations respond to scroll position using GSAP ScrollTrigger
 
 #### 2. Mission Statement
-- **Fade-In Text**: Mission text reveals with blur-to-focus animation
-- **Highlighted Keywords**: Three key words (community, art, impactful) illuminate sequentially as you scroll
-- **Background Transition**: Constellation blurs into background as text comes into focus
+- **Transition Text**: "art as infrastructure for change" appears below logo at 76% orbit progress
+- **Fade-In Text**: Mission text reveals smoothly as you scroll
+- **Simplified Experience**: Removed word highlighting for smoother, faster scroll experience (reduced from 350vh to 150vh)
 
 #### 3. Muse Portfolio
 - **Black Opening Slide**: Muse logo introduction with smooth transition
@@ -101,6 +101,10 @@ cocoex-website/
 - Early exit in shader star generation
 - `will-change` hints for animating elements
 - Z-index layering to minimize repaints
+- WebGL program state caching (minimizes GPU context switches)
+- Mobile DPR capping at 2x (reduces pixel count by 33% on high-DPI devices)
+- Extended scroll durations for 60fps GSAP interpolation
+- Consolidated master render loop for all animations
 
 ### Known Limitations
 - **Battery Usage**: Extended viewing on mobile may drain battery (WebGL rendering)
