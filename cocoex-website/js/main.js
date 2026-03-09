@@ -103,17 +103,18 @@
     MUSE_CONTENT_HOLD: 0,      // vh - no additional hold (content visible during crossfade)
     MUSE_TOTAL: 270,           // vh - total wrapper height (150 intro + 120 crossfade)
 
-    // Comet section (smooth scrolling experience)
+    // Comet section (smooth scrolling experience with extra hold)
     COMET_INTRO_PAUSE: 180,         // vh - hold intro static (increased for better pacing)
     COMET_LOGO_MOVEMENT: 280,       // vh - logo descent + text up (increased from 250vh for smoothness)
     COMET_MOVEMENT_START: 180,      // vh - when movement begins (after intro pause)
-    COMET_CROSSFADE_START: 460,     // vh - when slider fades in (180 + 280)
+    COMET_BOTTOM_HOLD: 150,         // vh - NEW: hold after logo reaches bottom before crossfade
+    COMET_CROSSFADE_START: 610,     // vh - when connected images fade in (180 + 280 + 150)
     COMET_CROSSFADE_DURATION: 120,  // vh - crossfade duration (increased from 100vh)
     COMET_PHASE_DURATION: 100,      // vh - scroll distance per phase (increased from 80vh for smoother transitions)
-    COMET_PHASES_START: 580,        // vh - when phase scrolling begins (after crossfade: 460 + 120)
+    COMET_PHASES_START: 730,        // vh - when phase scrolling begins (after crossfade: 610 + 120)
     COMET_PHASE_COUNT: 5,           // number of phases
     COMET_CONTENT_HOLD: 0,          // vh - no fixed hold (natural page end)
-    COMET_TOTAL: 1080               // vh - total wrapper height (180 intro + 280 movement + 120 fade + 500 phases)
+    COMET_TOTAL: 1230               // vh - total wrapper height (180 intro + 280 movement + 150 hold + 120 fade + 500 phases)
   };
 
   // ==========================================================================
@@ -954,7 +955,7 @@
     if (cometConnectedContent) {
       ScrollTrigger.create({
         trigger: '.comet-collab-wrapper',
-        start: 'top+=300vh top', // When connected images start to appear
+        start: `top+=${SCROLL_TIMING.COMET_CROSSFADE_START}vh top`, // When connected images start to appear (610vh)
         invalidateOnRefresh: true,
         anticipatePin: 1,
         onEnter: () => {
@@ -1080,8 +1081,8 @@
       gsap.timeline({
         scrollTrigger: {
           trigger: '.comet-collab-wrapper',
-          start: 'top+=300vh top', // After intro holds for 300vh
-          end: 'top+=650vh top', // 350vh crossfade duration (much slower)
+          start: `top+=${SCROLL_TIMING.COMET_CROSSFADE_START}vh top`, // After intro + movement + hold (610vh)
+          end: `top+=${SCROLL_TIMING.COMET_PHASES_START}vh top`, // End at 730vh (120vh crossfade)
           scrub: true,
           invalidateOnRefresh: true,
           anticipatePin: 1,

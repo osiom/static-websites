@@ -7,7 +7,7 @@ Static portfolio website for cocoex e.V. - a vibrant DAO blending art, blockchai
 
 ## Site Architecture
 
-**Total Scroll Height:** ~1570vh (15.7× viewport height)
+**Total Scroll Height:** ~1720vh (17.2× viewport height)
 
 ### Section 1: Landing (Orbiting → Explosion)
 **Scroll Range:** 0-400vh (`.intro`)
@@ -141,7 +141,7 @@ Static portfolio website for cocoex e.V. - a vibrant DAO blending art, blockchai
 ---
 
 ### Section 5: Comet-collab-1 (Intro Page)
-**Scroll Range:** 820-1220vh (`.comet-collab-intro`)
+**Scroll Range:** 820-1370vh (`.comet-collab-intro`)
 **Positioning:** Sticky with descending logo animation
 
 **Content:**
@@ -150,11 +150,15 @@ Static portfolio website for cocoex e.V. - a vibrant DAO blending art, blockchai
 - Uppercase, justified text
 
 **Animation Breakdown:**
-- **0-120vh**: Intro page hold (static)
-- **120-400vh**: Logo descent animation (280vh smooth transition)
+- **0-180vh**: Intro page hold (static)
+- **180-460vh**: Logo descent animation (280vh smooth transition)
   - Logo moves from center → bottom
   - Text content moves up
   - Fully reversible on scroll up
+- **460-610vh**: Bottom hold (150vh pause)
+  - Logo remains at bottom position
+  - Gives users time to read content
+  - Smooth transition before crossfade
 
 **Methods Explained:**
 - **Stardust**: Artists select a cause, create work, launch fundraising campaign. Funds split between artist and organization.
@@ -173,12 +177,12 @@ Static portfolio website for cocoex e.V. - a vibrant DAO blending art, blockchai
 ---
 
 ### Section 6: Comet-collab-2 (Connected Images)
-**Scroll Range:** 1220-1570vh (`.comet-collab-connected-content`)
+**Scroll Range:** 1370-1720vh (`.comet-collab-connected-content`)
 **Positioning:** Sticky content
 
 **Animation:**
-- **120vh crossfade**: Smooth transition from intro page (opacity 0 → 1)
-- **Static display**: 5 process images showing methodology
+- **610-730vh**: Crossfade from intro (120vh transition, opacity 0 → 1)
+- **730vh+**: Static display of 5 process images
 - Images arranged in flex layout with white connection lines (canvas overlay)
 
 **Content:**
