@@ -1632,8 +1632,13 @@ img {
   }
 
   .muse-orbit-item .muse-image {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
+  }
+
+  .muse-orbit-item {
+    touch-action: manipulation;
+    cursor: pointer;
   }
 
   /* Popup Mobile */
@@ -1652,6 +1657,15 @@ img {
   .social-links {
     gap: var(--spacing-xs);
     bottom: calc(var(--spacing-sm) + 50px);
+  }
+
+  .social-link {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
   }
 
   .social-icon {
@@ -1696,10 +1710,10 @@ img {
 @media screen and (max-width: 480px) {
   :root {
     /* Responsive typography - Small Mobile */
-    --font-h1-size: 18px;
-    --font-h1-height: 22px;
-    --font-h2-size: 12px;
-    --font-h2-height: 15px;
+    --font-h1-size: 20px;
+    --font-h1-height: 24px;
+    --font-h2-size: 13px;
+    --font-h2-height: 16px;
   }
 
   .text-section {
@@ -1711,8 +1725,8 @@ img {
   }
 
   .social-link {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     border-radius: 10px;
   }
 
