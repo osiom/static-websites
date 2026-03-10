@@ -199,25 +199,78 @@
           <!-- Connected Images Canvas for Lines -->
           <canvas class="comet-connection-canvas" id="comet-connection-canvas" aria-hidden="true"></canvas>
 
+          <!-- Toggle Switch -->
+          <div class="method-toggle-container">
+            <button class="method-toggle-btn active" data-method="stardust" aria-pressed="true">
+              stardust
+            </button>
+            <button class="method-toggle-btn" data-method="horizon" aria-pressed="false">
+              horizon
+            </button>
+          </div>
+
           <!-- Images spread across the page -->
           <div class="comet-images-container">
-            <div class="comet-image-item" data-index="0">
-              <img src="assets/images/comet-collabs/process-one.png" alt="Phase One">
+            <!-- Central Comet Collab Logo -->
+            <div class="comet-central-logo">
+              <img src="assets/images/comet-collabs/comet-collabs-logo.png" alt="Comet Collabs">
             </div>
-            <div class="comet-image-item" data-index="1">
-              <img src="assets/images/comet-collabs/process-two.png" alt="Phase Two">
+
+            <div class="comet-image-item clickable" data-step="1" tabindex="0" role="button" aria-label="View step 1 details">
+              <span class="step-number">1</span>
+              <img src="assets/images/comet-collabs/process-one.png" alt="Step One">
             </div>
-            <div class="comet-image-item" data-index="2">
-              <img src="assets/images/comet-collabs/process-three.png" alt="Phase Three">
+            <div class="comet-image-item clickable" data-step="2" tabindex="0" role="button" aria-label="View step 2 details">
+              <span class="step-number">2</span>
+              <img src="assets/images/comet-collabs/process-two.png" alt="Step Two">
             </div>
-            <div class="comet-image-item" data-index="3">
-              <img src="assets/images/comet-collabs/process-four.png" alt="Phase Four">
+            <div class="comet-image-item clickable" data-step="3" tabindex="0" role="button" aria-label="View step 3 details">
+              <span class="step-number">3</span>
+              <img src="assets/images/comet-collabs/process-three.png" alt="Step Three">
             </div>
-            <div class="comet-image-item" data-index="4">
-              <img src="assets/images/comet-collabs/process-five.png" alt="Phase Five">
+            <div class="comet-image-item clickable" data-step="4" tabindex="0" role="button" aria-label="View step 4 details">
+              <span class="step-number">4</span>
+              <img src="assets/images/comet-collabs/process-four.png" alt="Step Four">
+            </div>
+            <div class="comet-image-item clickable" data-step="5" tabindex="0" role="button" aria-label="View step 5 details">
+              <span class="step-number">5</span>
+              <img src="assets/images/comet-collabs/process-five.png" alt="Step Five">
             </div>
           </div> <!-- End comet-images-container -->
+
+          <!-- RSS Feed Section - Scrolling Ticker -->
+          <div class="rss-feed-section">
+            <h3 class="rss-feed-title">UPCOMING EVENTS</h3>
+            <div class="rss-feed-ticker">
+              <div class="rss-ticker-content">
+                <span class="rss-ticker-item" style="color: #5783A6;">Stardust 002: Open Call! - April 2026</span>
+                <span class="rss-ticker-separator">•</span>
+                <span class="rss-ticker-item" style="color: #D54D2E;">Horizon001 Event - May 2026</span>
+                <span class="rss-ticker-separator">•</span>
+                <span class="rss-ticker-item" style="color: #8CB07F;">Community Gathering - June 2026</span>
+                <span class="rss-ticker-separator">•</span>
+                <!-- Duplicate for seamless loop -->
+                <span class="rss-ticker-item" style="color: #5783A6;">Stardust 002: Open Call! - April 2026</span>
+                <span class="rss-ticker-separator">•</span>
+                <span class="rss-ticker-item" style="color: #D54D2E;">Horizon001 Event - May 2026</span>
+                <span class="rss-ticker-separator">•</span>
+                <span class="rss-ticker-item" style="color: #8CB07F;">Community Gathering - June 2026</span>
+                <span class="rss-ticker-separator">•</span>
+              </div>
+            </div>
+          </div>
+
         </div> <!-- End comet-collab-connected-content -->
+
+        <!-- Step Popup Modal -->
+        <div class="step-popup" role="dialog" aria-modal="true" aria-labelledby="step-popup-title">
+          <div class="step-popup-overlay"></div>
+          <div class="step-popup-content">
+            <button class="step-popup-close" aria-label="Close popup">×</button>
+            <h2 id="step-popup-title" class="step-popup-title"></h2>
+            <p class="step-popup-description"></p>
+          </div>
+        </div>
       </div> <!-- End comet-collab-wrapper -->
 
       <!-- Social links footer -->

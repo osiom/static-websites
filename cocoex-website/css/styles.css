@@ -541,41 +541,131 @@ img {
   height: 100%;
   z-index: 1;
   pointer-events: none;
+  overflow: hidden; /* Prevent lines from extending beyond bounds */
 }
 
-/* Images Container - spread across page */
+/* Images Container - absolute positioning for custom layout */
 .comet-images-container {
-  position: relative;
+  position: absolute;
+  top: 15%; /* Move entire container up closer to toggle */
+  left: 0;
   width: 100%;
-  height: 100%;
-  min-height: 80vh;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  flex-wrap: wrap;
-  gap: var(--spacing-lg);
+  height: 50%; /* Reduce height to compress layout */
   z-index: 2;
 }
 
-/* Individual image items */
+/* Central Comet Collab Logo */
+.comet-central-logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: clamp(120px, 18vw, 200px);
+  z-index: 3;
+}
+
+.comet-central-logo img {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 4px 20px rgba(255, 255, 255, 0.3));
+}
+
+/* Individual image items - absolute positioning around center */
 .comet-image-item {
-  flex: 0 1 auto;
-  max-width: clamp(120px, 20vw, 250px);
-  position: relative;
+  position: absolute;
+  max-width: clamp(80px, 12vw, 140px); /* Smaller than logo (120-200px) */
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, left, top;
+  animation: levitate 4s ease-in-out infinite;
+}
+
+/* Levitating animation - subtle floating motion */
+@keyframes levitate {
+  0%, 100% {
+    transform: translate(-50%, -50%) translateY(0px);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(-10px);
+  }
+}
+
+/* Different animation delays for each image */
+.comet-image-item[data-step="1"] {
+  animation-delay: 0s;
+}
+
+.comet-image-item[data-step="2"] {
+  animation-delay: 0.8s;
+}
+
+.comet-image-item[data-step="3"] {
+  animation-delay: 1.6s;
+}
+
+.comet-image-item[data-step="4"] {
+  animation-delay: 2.4s;
+}
+
+.comet-image-item[data-step="5"] {
+  animation-delay: 3.2s;
+}
+
+/* Step number - simple black text */
+.step-number {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-family: var(--font-canela);
+  font-size: clamp(14px, 1.4vw, 18px);
+  font-weight: bold;
+  color: var(--color-black);
+  z-index: 5;
+}
+
+/* Default orbit positions (randomized on load by JS) */
+.comet-image-item[data-step="1"],
+.comet-image-item[data-step="2"],
+.comet-image-item[data-step="3"],
+.comet-image-item[data-step="4"],
+.comet-image-item[data-step="5"] {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Merged state - all images converge to center */
+.comet-image-item.merging {
+  left: 50% !important;
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) scale(0.3) !important;
+  opacity: 0.5;
 }
 
 .comet-image-item img {
   width: 100%;
   height: auto;
   display: block;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 0; /* No border radius */
+  box-shadow: none; /* No shadow */
+  transition: opacity 0.3s ease;
+  opacity: 1;
 }
 
+/* Blinking hover effect - like twinkling stars */
 .comet-image-item img:hover {
-  transform: scale(1.05);
-  box-shadow: 0 8px 30px rgba(255, 255, 255, 0.2);
+  animation: starBlink 0.6s ease-in-out infinite;
+}
+
+@keyframes starBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 /* Static Colored Logo at Bottom (for overlay with white logo) */
@@ -606,7 +696,219 @@ img {
   width: 100%;
   height: 100%;
   z-index: 1;
-  opacity: 0.85; /* Blend with starfield underneath */
+  opacity: 1; /* Solid background, no stars */
+}
+
+/* ==========================================================================
+   Method Toggle (Stardust/Horizon)
+   ========================================================================== */
+.method-toggle-container {
+  position: absolute;
+  top: var(--spacing-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0;
+  background: transparent;
+  border: 1px solid var(--color-white);
+  border-radius: 50px;
+  padding: 4px;
+  z-index: 10;
+}
+
+.method-toggle-btn {
+  font-family: var(--font-canela);
+  font-size: clamp(14px, 1.5vw, 18px);
+  font-weight: var(--font-body-weight);
+  text-transform: uppercase;
+  color: var(--color-white);
+  background: transparent;
+  border: none;
+  padding: clamp(8px, 1vw, 12px) clamp(20px, 3vw, 32px);
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.method-toggle-btn.active {
+  background: var(--color-white);
+  color: var(--color-black);
+}
+
+.method-toggle-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.method-toggle-btn:focus {
+  outline: 2px solid var(--color-white);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   RSS Feed Scrolling Ticker
+   ========================================================================== */
+.rss-feed-section {
+  position: absolute;
+  bottom: calc(var(--spacing-md) + 140px); /* Higher above social footer (was 80px) */
+  left: 0;
+  width: 100%;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.rss-feed-title {
+  font-family: var(--font-canela);
+  font-size: clamp(18px, 2vw, 24px);
+  font-weight: var(--font-h1-weight);
+  text-transform: uppercase;
+  color: var(--color-white);
+  text-align: center;
+  letter-spacing: 0.05em;
+  margin: 0;
+  padding: 0;
+}
+
+.rss-feed-ticker {
+  width: 100%;
+  overflow: hidden;
+  background: transparent;
+  border: 1px solid var(--color-white);
+  border-left: none;
+  border-right: none;
+  padding: clamp(14px, 2vw, 20px) 0;
+}
+
+.rss-ticker-content {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: ticker-scroll 30s linear infinite;
+  gap: clamp(20px, 2.5vw, 32px);
+}
+
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.rss-ticker-item {
+  font-family: var(--font-canela);
+  font-size: clamp(18px, 2.2vw, 26px);
+  font-weight: var(--font-body-weight);
+  text-transform: uppercase;
+  /* Color applied inline with muse colors */
+}
+
+.rss-ticker-separator {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: clamp(18px, 2.2vw, 26px);
+  margin: 0 clamp(16px, 2vw, 24px);
+}
+
+/* ==========================================================================
+   Step Popup Modal
+   ========================================================================== */
+.step-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.step-popup.active {
+  display: flex;
+  pointer-events: auto;
+}
+
+.step-popup-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 1;
+}
+
+.step-popup-content {
+  position: relative;
+  background: var(--color-white);
+  border-radius: 16px;
+  padding: clamp(2rem, 5vw, 3rem);
+  max-width: 600px;
+  width: 90%;
+  z-index: 2;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.step-popup-close {
+  position: absolute;
+  top: clamp(1rem, 2vw, 1.5rem);
+  right: clamp(1rem, 2vw, 1.5rem);
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  color: var(--color-black);
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-popup-close:hover {
+  transform: scale(1.1);
+  color: #555;
+}
+
+.step-popup-close:focus {
+  outline: 2px solid var(--color-black);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.step-popup-title {
+  font-family: var(--font-canela);
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: var(--font-heading-weight);
+  color: var(--color-black);
+  margin-bottom: var(--spacing-md);
+  text-transform: uppercase;
+}
+
+.step-popup-description {
+  font-family: var(--font-canela);
+  font-size: clamp(16px, 2vw, 20px);
+  line-height: 1.6;
+  color: var(--color-black);
+  text-align: justify;
+}
+
+/* Clickable image cursor */
+.comet-image-item.clickable {
+  cursor: pointer;
+}
+
+.comet-image-item.clickable:focus {
+  outline: 2px solid var(--color-white);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
 /* ==========================================================================
@@ -682,7 +984,7 @@ img {
 .muse-section-wrapper {
   position: relative;
   width: 100%;
-  height: 250vh; /* 150vh intro hold + 100vh crossfade (extended hold) */
+  height: 470vh; /* 350vh intro hold + 120vh crossfade (extended hold) */
   background: transparent;
 }
 
@@ -731,7 +1033,7 @@ img {
   font-weight: var(--font-body-weight);
   color: var(--color-white);
   opacity: 0.9;
-  max-width: 1400px;
+  max-width: 800px;
   width: 90%;
   text-align: justify;
   text-transform: uppercase;
@@ -749,7 +1051,7 @@ img {
   font-weight: var(--font-body-weight);
   color: var(--color-white);
   opacity: 0.9;
-  max-width: 1400px;
+  max-width: 800px;
   width: 90%;
   text-align: justify;
   text-transform: uppercase;
@@ -1105,6 +1407,8 @@ img {
   .comet-collab-intro-content {
     padding: 0 clamp(1rem, 4vw, 3rem);
   }
+
+  /* RSS ticker remains full width */
 }
 
 /* ==========================================================================
@@ -1130,6 +1434,36 @@ img {
     max-width: clamp(100px, 25vw, 180px);
   }
 
+  /* Adjust container and positions for mobile */
+  .comet-images-container {
+    top: 12%;
+    height: 55%;
+  }
+
+  .comet-image-item[data-step="1"] {
+    left: 10%;
+    top: 5%;
+  }
+
+  .comet-image-item[data-step="2"] {
+    right: 10%;
+    top: 5%;
+  }
+
+  .comet-image-item[data-step="3"] {
+    left: 10%;
+    top: 48%;
+  }
+
+  .comet-image-item[data-step="4"] {
+    right: 10%;
+    top: 48%;
+  }
+
+  .comet-image-item[data-step="5"] {
+    bottom: 2%;
+  }
+
   .muse-popup-body {
     max-width: 320px;
   }
@@ -1137,6 +1471,17 @@ img {
   .muse-popup-hint {
     font-size: 12px;
     bottom: var(--spacing-md);
+  }
+
+  .method-toggle-container {
+    top: var(--spacing-sm);
+  }
+
+  /* RSS ticker remains full width on mobile */
+
+  .step-popup-content {
+    width: 95%;
+    padding: clamp(1.5rem, 4vw, 2rem);
   }
 }
 
@@ -1157,6 +1502,13 @@ img {
   .comet-image-item {
     max-width: clamp(90px, 28vw, 140px);
   }
+
+  .method-toggle-btn {
+    padding: clamp(6px, 1vw, 10px) clamp(16px, 2.5vw, 24px);
+    font-size: clamp(12px, 1.3vw, 16px);
+  }
+
+  /* Old RSS styles removed - now using ticker */
 }
 
 /* Note: Large desktop breakpoints removed - clamp() handles all screen sizes fluidly */

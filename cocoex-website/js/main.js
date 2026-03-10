@@ -98,10 +98,10 @@
     TEXT_SECTION_HEIGHT: 150,  // vh - total height for text section
 
     // Muse section (extended intro hold)
-    MUSE_INTRO_HOLD: 150,      // vh - hold intro before transition (extended for better pacing)
+    MUSE_INTRO_HOLD: 350,      // vh - hold intro before transition (increased from 250vh)
     MUSE_CROSSFADE: 120,       // vh - smoother crossfade (increased from 100vh)
     MUSE_CONTENT_HOLD: 0,      // vh - no additional hold (content visible during crossfade)
-    MUSE_TOTAL: 270,           // vh - total wrapper height (150 intro + 120 crossfade)
+    MUSE_TOTAL: 470,           // vh - total wrapper height (350 intro + 120 crossfade)
 
     // Comet section (smooth scrolling experience with extra hold)
     COMET_INTRO_PAUSE: 180,         // vh - hold intro static (increased for better pacing)
@@ -189,6 +189,54 @@
     { points: [5, 6] },
     { points: [6, 3] },
   ];
+
+  // Step descriptions for Stardust and Horizon
+  const STEP_DATA = {
+    stardust: {
+      1: {
+        title: 'Stardust Step 1',
+        description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.'
+      },
+      2: {
+        title: 'Stardust Step 2',
+        description: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'
+      },
+      3: {
+        title: 'Stardust Step 3',
+        description: 'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.'
+      },
+      4: {
+        title: 'Stardust Step 4',
+        description: 'Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet.'
+      },
+      5: {
+        title: 'Stardust Step 5',
+        description: 'At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa.'
+      }
+    },
+    horizon: {
+      1: {
+        title: 'Horizon Step 1',
+        description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet.'
+      },
+      2: {
+        title: 'Horizon Step 2',
+        description: 'Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta. Mauris massa. Vestibulum lacinia arcu eget nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra.'
+      },
+      3: {
+        title: 'Horizon Step 3',
+        description: 'Curabitur sodales ligula in libero. Sed dignissim lacinia nunc. Curabitur tortor. Pellentesque nibh. Aenean quam. In scelerisque sem at dolor. Maecenas mattis. Sed convallis tristique sem.'
+      },
+      4: {
+        title: 'Horizon Step 4',
+        description: 'Proin ut ligula vel nunc egestas porttitor. Morbi lectus risus, iaculis vel, suscipit quis, luctus non, massa. Fusce ac turpis quis ligula lacinia aliquet. Mauris ipsum. Nulla metus metus, ullamcorper vel.'
+      },
+      5: {
+        title: 'Horizon Step 5',
+        description: 'Vivamus euismod mauris. In ut quam vitae odio lacinia tincidunt. Praesent ut ligula non mi varius sagittis. Cras sagittis. Praesent ac sem eget est egestas volutpat. Vivamus consectetuer hendrerit lacus.'
+      }
+    }
+  };
 
   // ==========================================================================
   // DOM ELEMENTS
@@ -1098,7 +1146,13 @@
           scrub: true,
           invalidateOnRefresh: true,
           anticipatePin: 1,
-          onEnter: () => log('🌀 COMET-OVERLAY: Intro → Connected Images'),
+          onEnter: () => {
+            log('🌀 COMET-OVERLAY: Intro → Connected Images');
+            // Redraw connection lines when section becomes visible
+            if (CometConnections && CometConnections.draw) {
+              CometConnections.draw();
+            }
+          },
           onLeaveBack: () => {
             triggerShineAnimation(true); // Scroll back: Horizon → Stardust
             log('✨ COMET-SHINE: Horizon → Stardust animation triggered (scroll back)');
@@ -1928,32 +1982,94 @@
       // Clear canvas
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-      // Set line style (white, thin line like constellation)
-      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-      this.ctx.lineWidth = 1;
+      const containerRect = this.canvas.getBoundingClientRect();
+
+      // Helper function to get center position
+      const getCenter = (item) => {
+        const rect = item.getBoundingClientRect();
+        return {
+          x: rect.left + rect.width / 2 - containerRect.left,
+          y: rect.top + rect.height / 2 - containerRect.top
+        };
+      };
+
+      // Get center logo position
+      const centralLogo = document.querySelector('.comet-central-logo');
+      const centerPos = centralLogo ? getCenter(centralLogo) : { x: containerRect.width / 2, y: containerRect.height / 2 };
+
+      // Draw connections: each image to center + sequential path
+      const sequentialConnections = [
+        [0, 1], // img1 → img2
+        [1, 2], // img2 → img3
+        [2, 3], // img3 → img4
+        [3, 4], // img4 → img5
+      ];
+
+      // Enhanced astral line style with glow
+      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      this.ctx.lineWidth = 2;
       this.ctx.lineCap = 'round';
 
-      // Draw lines connecting images in sequence (0 → 1 → 2 → 3 → 4)
-      for (let i = 0; i < this.imageItems.length - 1; i++) {
-        const current = this.imageItems[i];
-        const next = this.imageItems[i + 1];
+      // Draw radial connections (each image to center)
+      this.imageItems.forEach((item) => {
+        if (!item) return;
+        const from = getCenter(item);
 
-        // Get center positions of each image
-        const currentRect = current.getBoundingClientRect();
-        const nextRect = next.getBoundingClientRect();
-        const containerRect = this.canvas.getBoundingClientRect();
-
-        const x1 = currentRect.left + currentRect.width / 2 - containerRect.left;
-        const y1 = currentRect.top + currentRect.height / 2 - containerRect.top;
-        const x2 = nextRect.left + nextRect.width / 2 - containerRect.left;
-        const y2 = nextRect.top + nextRect.height / 2 - containerRect.top;
-
-        // Draw line
+        // Outer glow (larger, softer)
+        this.ctx.shadowBlur = 15;
+        this.ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
         this.ctx.beginPath();
-        this.ctx.moveTo(x1, y1);
-        this.ctx.lineTo(x2, y2);
+        this.ctx.moveTo(from.x, from.y);
+        this.ctx.lineTo(centerPos.x, centerPos.y);
         this.ctx.stroke();
-      }
+
+        // Inner glow (brighter core)
+        this.ctx.shadowBlur = 8;
+        this.ctx.shadowColor = 'rgba(255, 255, 255, 1)';
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.beginPath();
+        this.ctx.moveTo(from.x, from.y);
+        this.ctx.lineTo(centerPos.x, centerPos.y);
+        this.ctx.stroke();
+
+        // Reset for next line
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        this.ctx.lineWidth = 2;
+      });
+
+      // Draw sequential connections (1→2→3→4→5)
+      sequentialConnections.forEach(([fromIdx, toIdx]) => {
+        if (!this.imageItems[fromIdx] || !this.imageItems[toIdx]) return;
+
+        const from = getCenter(this.imageItems[fromIdx]);
+        const to = getCenter(this.imageItems[toIdx]);
+
+        // Outer glow (larger, softer)
+        this.ctx.shadowBlur = 15;
+        this.ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+        this.ctx.beginPath();
+        this.ctx.moveTo(from.x, from.y);
+        this.ctx.lineTo(to.x, to.y);
+        this.ctx.stroke();
+
+        // Inner glow (brighter core)
+        this.ctx.shadowBlur = 8;
+        this.ctx.shadowColor = 'rgba(255, 255, 255, 1)';
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.beginPath();
+        this.ctx.moveTo(from.x, from.y);
+        this.ctx.lineTo(to.x, to.y);
+        this.ctx.stroke();
+
+        // Reset for next line
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        this.ctx.lineWidth = 2;
+      });
+
+      // Reset shadow for performance
+      this.ctx.shadowBlur = 0;
     }
   };
 
@@ -2008,6 +2124,268 @@
       }, 2600); // 1000ms delay + 1600ms animation
     }
   }
+
+  // ==========================================================================
+  // METHOD TOGGLE (STARDUST/HORIZON)
+  // ==========================================================================
+  const MethodToggle = {
+    currentMethod: 'stardust',
+    buttons: [],
+    imageItems: [],
+    isAnimating: false,
+
+    init() {
+      this.buttons = Array.from(document.querySelectorAll('.method-toggle-btn'));
+      this.imageItems = Array.from(document.querySelectorAll('.comet-image-item'));
+
+      if (this.buttons.length === 0) return;
+
+      this.buttons.forEach(btn => {
+        btn.addEventListener('click', () => this.toggle(btn.dataset.method));
+      });
+
+      // Initialize with random positions on page load
+      setTimeout(() => {
+        this.randomizePositions();
+
+        // Draw connection lines after positioning
+        if (CometConnections && CometConnections.draw) {
+          setTimeout(() => {
+            CometConnections.draw();
+          }, 50);
+        }
+      }, 100);
+    },
+
+    toggle(method) {
+      if (this.currentMethod === method || this.isAnimating) return;
+
+      this.isAnimating = true;
+      this.currentMethod = method;
+
+      // Update button states
+      this.buttons.forEach(btn => {
+        if (btn.dataset.method === method) {
+          btn.classList.add('active');
+          btn.setAttribute('aria-pressed', 'true');
+        } else {
+          btn.classList.remove('active');
+          btn.setAttribute('aria-pressed', 'false');
+        }
+      });
+
+      // Trigger merge-and-explode animation
+      this.animateMergeExplode();
+    },
+
+    animateMergeExplode() {
+      // Phase 1: Merge to center (0.6s)
+      this.imageItems.forEach(item => {
+        item.classList.add('merging');
+      });
+
+      // Redraw connection lines during animation
+      if (CometConnections && CometConnections.draw) {
+        const mergeInterval = setInterval(() => {
+          CometConnections.draw();
+        }, 16); // ~60fps
+
+        // Phase 2: Randomize positions and explode (after 0.6s)
+        setTimeout(() => {
+          clearInterval(mergeInterval);
+
+          // Randomize positions before exploding
+          this.randomizePositions();
+
+          this.imageItems.forEach(item => {
+            item.classList.remove('merging');
+          });
+
+          // Redraw lines during explode
+          const explodeInterval = setInterval(() => {
+            CometConnections.draw();
+          }, 16);
+
+          // Phase 3: Animation complete (after another 0.6s)
+          setTimeout(() => {
+            clearInterval(explodeInterval);
+            this.isAnimating = false;
+
+            // Final redraw
+            if (CometConnections && CometConnections.draw) {
+              CometConnections.draw();
+            }
+          }, 600);
+
+        }, 600);
+      } else {
+        // Fallback if CometConnections not available
+        setTimeout(() => {
+          this.randomizePositions();
+          this.imageItems.forEach(item => {
+            item.classList.remove('merging');
+          });
+
+          setTimeout(() => {
+            this.isAnimating = false;
+          }, 600);
+        }, 600);
+      }
+    },
+
+    randomizePositions() {
+      // Generate random positions around the center logo
+      // Keep images in a circular/orbital pattern but fully randomized (not consecutive)
+      const baseAngles = [0, 72, 144, 216, 288]; // 5 points evenly distributed (360/5)
+
+      // Shuffle angles using Fisher-Yates algorithm for true randomization
+      const shuffledAngles = [...baseAngles];
+      for (let i = shuffledAngles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledAngles[i], shuffledAngles[j]] = [shuffledAngles[j], shuffledAngles[i]];
+      }
+
+      const radiusMin = 35; // % from center
+      const radiusMax = 45; // % from center
+
+      this.imageItems.forEach((item, index) => {
+        // Use shuffled angle for this image
+        const baseAngle = shuffledAngles[index];
+        const angleVariation = (Math.random() - 0.5) * 30; // ±15 degrees
+        const angle = (baseAngle + angleVariation) * (Math.PI / 180);
+
+        // Randomize radius slightly
+        const radius = radiusMin + Math.random() * (radiusMax - radiusMin);
+
+        // Convert polar to cartesian coordinates
+        const x = 50 + radius * Math.cos(angle); // 50% = center
+        const y = 50 + radius * Math.sin(angle);
+
+        // Apply positions
+        item.style.left = `${x}%`;
+        item.style.top = `${y}%`;
+        item.style.right = 'auto';
+        item.style.bottom = 'auto';
+        item.style.transform = 'translate(-50%, -50%)';
+      });
+    },
+
+    getCurrentMethod() {
+      return this.currentMethod;
+    }
+  };
+
+  // ==========================================================================
+  // STEP POPUP MODULE
+  // ==========================================================================
+  const StepPopup = {
+    popup: null,
+    overlay: null,
+    content: null,
+    closeBtn: null,
+    title: null,
+    description: null,
+    isOpen: false,
+
+    init() {
+      // Get popup elements
+      this.popup = document.querySelector('.step-popup');
+      this.overlay = document.querySelector('.step-popup-overlay');
+      this.content = document.querySelector('.step-popup-content');
+      this.closeBtn = document.querySelector('.step-popup-close');
+      this.title = document.querySelector('.step-popup-title');
+      this.description = document.querySelector('.step-popup-description');
+
+      if (!this.popup) return;
+
+      // Get all clickable image items
+      const imageItems = document.querySelectorAll('.comet-image-item.clickable');
+
+      // Add click listeners to each image
+      imageItems.forEach(item => {
+        // Click listener
+        item.addEventListener('click', () => {
+          const step = item.dataset.step;
+          this.open(step);
+        });
+
+        // Keyboard support (Enter key)
+        item.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            const step = item.dataset.step;
+            this.open(step);
+          }
+        });
+      });
+
+      // Close button
+      this.closeBtn.addEventListener('click', () => this.close());
+
+      // Close on overlay click
+      this.overlay.addEventListener('click', () => this.close());
+
+      // Close on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.isOpen) {
+          this.close();
+        }
+      });
+
+      // Prevent closing when clicking inside content
+      this.content.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    },
+
+    open(step) {
+      const method = MethodToggle.getCurrentMethod();
+      const stepData = STEP_DATA[method][step];
+
+      if (!stepData) return;
+
+      // Update content
+      this.title.textContent = stepData.title;
+      this.description.textContent = stepData.description;
+
+      // Show popup
+      this.popup.classList.add('active');
+      this.isOpen = true;
+
+      // GSAP animation
+      gsap.fromTo(this.content,
+        {
+          opacity: 0,
+          scale: 0.8
+        },
+        {
+          opacity: 1,
+          scale: 1,
+          duration: 0.3,
+          ease: 'back.out(1.7)'
+        }
+      );
+
+      // Trap focus in popup
+      this.closeBtn.focus();
+    },
+
+    close() {
+      if (!this.isOpen) return;
+
+      // GSAP animation
+      gsap.to(this.content, {
+        opacity: 0,
+        scale: 0.8,
+        duration: 0.2,
+        ease: 'power2.in',
+        onComplete: () => {
+          this.popup.classList.remove('active');
+          this.isOpen = false;
+        }
+      });
+    }
+  };
 
   // ==========================================================================
   // INITIALIZATION
@@ -2092,6 +2470,12 @@
 
     // Initialize comet connection lines
     CometConnections.init();
+
+    // Initialize method toggle (Stardust/Horizon)
+    MethodToggle.init();
+
+    // Initialize step popup
+    StepPopup.init();
 
     // Note: CometCollabSlider module removed - replaced with static connected images layout
     // Start master render loop (consolidates all animations)
