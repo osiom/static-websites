@@ -110,11 +110,11 @@
     COMET_BOTTOM_HOLD: 80,          // vh - hold after logo reaches bottom (reduced from 150vh)
     COMET_CROSSFADE_START: 360,     // vh - when connected images fade in (100 + 180 + 80)
     COMET_CROSSFADE_DURATION: 120,  // vh - crossfade duration
-    COMET_PHASE_DURATION: 60,       // vh - scroll distance per phase (reduced from 100vh)
+    COMET_PHASE_DURATION: 40,       // vh - scroll distance per phase (reduced from 60vh)
     COMET_PHASES_START: 480,        // vh - when phase scrolling begins (after crossfade: 360 + 120)
-    COMET_PHASE_COUNT: 5,           // number of phases
+    COMET_PHASE_COUNT: 3,           // number of phases (reduced from 5)
     COMET_CONTENT_HOLD: 0,          // vh - no fixed hold (natural page end)
-    COMET_TOTAL: 780                // vh - total wrapper height (100 intro + 180 movement + 80 hold + 120 fade + 300 phases)
+    COMET_TOTAL: 600                // vh - total wrapper height (100 intro + 180 movement + 80 hold + 120 fade + 120 phases)
   };
 
   // ==========================================================================
