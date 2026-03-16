@@ -103,18 +103,18 @@
     MUSE_CONTENT_HOLD: 0,      // vh - no additional hold (content visible during crossfade)
     MUSE_TOTAL: 470,           // vh - total wrapper height (350 intro + 120 crossfade)
 
-    // Comet section (smooth scrolling experience with extra hold)
-    COMET_INTRO_PAUSE: 180,         // vh - hold intro static (increased for better pacing)
-    COMET_LOGO_MOVEMENT: 280,       // vh - logo descent + text up (increased from 250vh for smoothness)
-    COMET_MOVEMENT_START: 180,      // vh - when movement begins (after intro pause)
-    COMET_BOTTOM_HOLD: 150,         // vh - NEW: hold after logo reaches bottom before crossfade
-    COMET_CROSSFADE_START: 610,     // vh - when connected images fade in (180 + 280 + 150)
-    COMET_CROSSFADE_DURATION: 120,  // vh - crossfade duration (increased from 100vh)
-    COMET_PHASE_DURATION: 100,      // vh - scroll distance per phase (increased from 80vh for smoother transitions)
-    COMET_PHASES_START: 730,        // vh - when phase scrolling begins (after crossfade: 610 + 120)
+    // Comet section (optimized for faster scroll progression)
+    COMET_INTRO_PAUSE: 100,         // vh - hold intro static
+    COMET_LOGO_MOVEMENT: 180,       // vh - logo descent + text up (reduced from 280vh)
+    COMET_MOVEMENT_START: 100,      // vh - when movement begins (after intro pause)
+    COMET_BOTTOM_HOLD: 80,          // vh - hold after logo reaches bottom (reduced from 150vh)
+    COMET_CROSSFADE_START: 360,     // vh - when connected images fade in (100 + 180 + 80)
+    COMET_CROSSFADE_DURATION: 120,  // vh - crossfade duration
+    COMET_PHASE_DURATION: 60,       // vh - scroll distance per phase (reduced from 100vh)
+    COMET_PHASES_START: 480,        // vh - when phase scrolling begins (after crossfade: 360 + 120)
     COMET_PHASE_COUNT: 5,           // number of phases
     COMET_CONTENT_HOLD: 0,          // vh - no fixed hold (natural page end)
-    COMET_TOTAL: 1230               // vh - total wrapper height (180 intro + 280 movement + 150 hold + 120 fade + 500 phases)
+    COMET_TOTAL: 780                // vh - total wrapper height (100 intro + 180 movement + 80 hold + 120 fade + 300 phases)
   };
 
   // ==========================================================================
@@ -270,6 +270,9 @@
   let pulseTriggered = false; // Track if pulse has been triggered
   let constellationRotation = 0; // Z-axis rotation angle in radians
   let masterRenderLoop = null; // Consolidated render loop reference
+  let isPageVisible = true; // Track page visibility for RAF optimization
+  let webglContextsLost = false; // Track if any WebGL context was lost
+  let contextListenersAdded = false; // Prevent duplicate event listeners
 
   // ==========================================================================
   // DEBUG SYSTEM - Set to true to enable logging
@@ -472,6 +475,31 @@
     if (!gl) {
       console.warn('WebGL not supported, background animation disabled');
       return;
+    }
+
+    // Add context loss/restore handlers (only once)
+    if (!contextListenersAdded) {
+      elements.bgCanvas.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault();
+        console.warn('WebGL context lost - will attempt restore');
+        webglContextsLost = true;
+        if (masterRenderLoop) {
+          cancelAnimationFrame(masterRenderLoop);
+          masterRenderLoop = null;
+        }
+      }, false);
+
+      elements.bgCanvas.addEventListener('webglcontextrestored', () => {
+        console.log('WebGL context restored - reinitializing');
+        webglContextsLost = false;
+        initWebGL();
+        resize();
+        if (!masterRenderLoop) {
+          masterRender();
+        }
+      }, false);
+
+      contextListenersAdded = true;
     }
 
     const vertexShader = createShader(gl.VERTEX_SHADER, vertexShaderSource);
@@ -787,6 +815,12 @@
   let lastActiveProgram = null; // Cache active WebGL program to avoid redundant switches
 
   function masterRender() {
+    // Skip rendering if page is hidden (battery optimization)
+    if (!isPageVisible || webglContextsLost) {
+      masterRenderLoop = requestAnimationFrame(masterRender);
+      return;
+    }
+
     const time = (Date.now() - startTime) / 1000;
 
     // Animate pulse if active
@@ -848,6 +882,18 @@
       cometGL.drawArrays(cometGL.TRIANGLES, 0, 6);
     }
 
+    // Render Comet background 2 (connected images section)
+    if (CometCollabBackground.gl2 && CometCollabBackground.program2) {
+      const cometGL2 = CometCollabBackground.gl2;
+      if (lastActiveProgram !== CometCollabBackground.program2) {
+        cometGL2.useProgram(CometCollabBackground.program2);
+        lastActiveProgram = CometCollabBackground.program2;
+      }
+      cometGL2.uniform2f(CometCollabBackground.resUniform2, CometCollabBackground.canvas2.width, CometCollabBackground.canvas2.height);
+      cometGL2.uniform1f(CometCollabBackground.timeUniform2, time);
+      cometGL2.drawArrays(cometGL2.TRIANGLES, 0, 6);
+    }
+
     // Update Muse orbit positions
     if (MuseScroll.isInitialized) {
       MuseScroll.updateOrbitPositions();
@@ -881,6 +927,23 @@
     }, 150);
 
     window.addEventListener('resize', handleResize, { passive: true });
+
+    // Page Visibility API - pause rendering when tab hidden (battery optimization)
+    document.addEventListener('visibilitychange', () => {
+      isPageVisible = !document.hidden;
+      if (isPageVisible && !masterRenderLoop && !webglContextsLost) {
+        // Resume rendering when page becomes visible
+        masterRender();
+      }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (masterRenderLoop) {
+        cancelAnimationFrame(masterRenderLoop);
+        masterRenderLoop = null;
+      }
+    });
 
     window.addEventListener('load', () => {
       setTimeout(() => {
@@ -995,21 +1058,21 @@
       { opacity: 1, ease: 'power2.out' }
     );
 
-    // Footer reveal when connected images become visible
+    // Footer reveal at end of page (horizon section)
     const socialLinks = document.querySelector('.social-links');
     const footerLogo = document.querySelector('.footer-logo');
-    const cometConnectedContent = document.querySelector('.comet-collab-connected-content');
+    const horizonSection = document.querySelector('#horizon');
 
-    if (cometConnectedContent) {
+    if (horizonSection) {
       ScrollTrigger.create({
-        trigger: '.comet-collab-wrapper',
-        start: `top+=${SCROLL_TIMING.COMET_CROSSFADE_START}vh top`, // When connected images start to appear (610vh)
+        trigger: '#horizon',
+        start: 'top 80%', // Footer appears when horizon section enters viewport
         invalidateOnRefresh: true,
         anticipatePin: 1,
         onEnter: () => {
           socialLinks?.classList.add('visible');
           footerLogo?.classList.add('visible');
-          log('👣 FOOTER: Visible with connected images');
+          log('👣 FOOTER: Visible at page end (horizon section)');
         },
         onLeaveBack: () => {
           socialLinks?.classList.remove('visible');
@@ -1089,7 +1152,7 @@
 
     // Comet Collab intro page and connected images overlay
     const cometIntroPage = document.getElementById('comet-collab-intro');
-    // cometConnectedContent already declared above at line 956
+    const cometConnectedContent = document.querySelector('.comet-collab-connected-content');
 
     if (cometIntroPage && cometConnectedContent) {
       // Hide constellation canvas when entering comet section
@@ -1125,17 +1188,25 @@
         }
       );
 
-      // Shine animation for Stardust and Horizon words (scroll down)
-      ScrollTrigger.create({
-        trigger: '.comet-collab-wrapper',
-        start: 'top 80%',
-        end: 'top 20%',
-        invalidateOnRefresh: true,
-        onEnter: () => {
-          triggerShineAnimation(false); // Scroll down: Stardust → Horizon
-          log('✨ COMET-SHINE: Stardust → Horizon animation triggered');
-        }
-      });
+      // Fade in comet methods section (toggle panels)
+      const cometMethods = document.querySelector('.comet-collab-methods');
+      if (cometMethods) {
+        gsap.fromTo(cometMethods,
+          { opacity: 0 },
+          {
+            opacity: 1,
+            scrollTrigger: {
+              trigger: '.comet-collab-wrapper',
+              start: `top+=${SCROLL_TIMING.COMET_INTRO_PAUSE}vh top`,
+              end: `top+=${SCROLL_TIMING.COMET_INTRO_PAUSE + 100}vh top`,
+              scrub: true,
+              invalidateOnRefresh: true,
+              anticipatePin: 1,
+              onEnter: () => log('🎯 COMET-METHODS: Fading in toggle section')
+            }
+          }
+        );
+      }
 
       // Crossfade: intro fades out while connected images fade in
       gsap.timeline({
@@ -1152,10 +1223,6 @@
             if (CometConnections && CometConnections.draw) {
               CometConnections.draw();
             }
-          },
-          onLeaveBack: () => {
-            triggerShineAnimation(true); // Scroll back: Horizon → Stardust
-            log('✨ COMET-SHINE: Horizon → Stardust animation triggered (scroll back)');
           }
         }
       })
@@ -1487,31 +1554,63 @@
     canvas: null,
     gl: null,
     program: null,
+    canvas2: null,
+    gl2: null,
+    program2: null,
+    resUniform2: null,
+    timeUniform2: null,
     startTime: Date.now(),
 
     init() {
+      // Initialize first canvas (methods section)
       this.canvas = document.getElementById('comet-collab-background-canvas');
-      if (!this.canvas) return;
+      if (this.canvas) {
+        this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
+        if (this.gl) {
+          this.initShaders();
+        }
+      }
 
-      this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
-      if (!this.gl) return;
+      // Initialize second canvas (connected images section)
+      this.canvas2 = document.getElementById('comet-collab-background-canvas-2');
+      if (this.canvas2) {
+        this.gl2 = this.canvas2.getContext('webgl') || this.canvas2.getContext('experimental-webgl');
+        if (this.gl2) {
+          this.initShaders2();
+        }
+      }
 
       this.resize();
-      this.initShaders();
       // Render handled by master loop
     },
 
     resize() {
       const dpr = window.devicePixelRatio || 1;
-      const rect = this.canvas.parentElement.getBoundingClientRect();
 
-      this.canvas.width = rect.width * dpr;
-      this.canvas.height = rect.height * dpr;
-      this.canvas.style.width = rect.width + 'px';
-      this.canvas.style.height = rect.height + 'px';
+      // Resize first canvas
+      if (this.canvas && this.canvas.parentElement) {
+        const rect = this.canvas.parentElement.getBoundingClientRect();
+        this.canvas.width = rect.width * dpr;
+        this.canvas.height = rect.height * dpr;
+        this.canvas.style.width = rect.width + 'px';
+        this.canvas.style.height = rect.height + 'px';
 
-      if (this.gl) {
-        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+        if (this.gl) {
+          this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+        }
+      }
+
+      // Resize second canvas
+      if (this.canvas2 && this.canvas2.parentElement) {
+        const rect2 = this.canvas2.parentElement.getBoundingClientRect();
+        this.canvas2.width = rect2.width * dpr;
+        this.canvas2.height = rect2.height * dpr;
+        this.canvas2.style.width = rect2.width + 'px';
+        this.canvas2.style.height = rect2.height + 'px';
+
+        if (this.gl2) {
+          this.gl2.viewport(0, 0, this.canvas2.width, this.canvas2.height);
+        }
       }
     },
 
@@ -1609,6 +1708,100 @@
         return null;
       }
       return shader;
+    },
+
+    // Initialize second canvas shaders (reuses same shader source)
+    initShaders2() {
+      const vertexShaderSource = `
+        attribute vec2 a_position;
+        void main() {
+          gl_Position = vec4(a_position, 0.0, 1.0);
+        }
+      `;
+
+      const fragmentShaderSource = `
+        precision highp float;
+        uniform vec2 u_resolution;
+        uniform float u_time;
+
+        // Same muse colors for continuity
+        const vec3 color1 = vec3(0.34, 0.51, 0.65); // Lunes
+        const vec3 color2 = vec3(0.84, 0.30, 0.18); // Ares
+        const vec3 color3 = vec3(0.55, 0.69, 0.50); // Rabu
+        const vec3 color4 = vec3(0.97, 0.85, 0.42); // Thunor
+        const vec3 color5 = vec3(0.37, 0.28, 0.63); // Shukra
+        const vec3 color6 = vec3(0.50, 0.29, 0.64); // Dosei
+        const vec3 color7 = vec3(0.83, 0.51, 0.28); // Solis
+
+        ${GLSL_UTILS.SIMPLEX_NOISE}
+
+        void main() {
+          vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+
+          float time = u_time * 0.15;
+          float noise1 = snoise(uv * 2.0 + vec2(time * 0.3, time * 0.2));
+          float noise2 = snoise(uv * 3.0 - vec2(time * 0.2, time * 0.3));
+          float noise3 = snoise(uv * 1.5 + vec2(time * 0.1, -time * 0.15));
+
+          float pattern = (noise1 + noise2 * 0.5 + noise3 * 0.3) / 1.8;
+          pattern = pattern * 0.5 + 0.5;
+
+          float zone = pattern * 7.0;
+          vec3 baseColor;
+
+          if (zone < 1.0) {
+            baseColor = mix(color1, color2, fract(zone));
+          } else if (zone < 2.0) {
+            baseColor = mix(color2, color3, fract(zone));
+          } else if (zone < 3.0) {
+            baseColor = mix(color3, color4, fract(zone));
+          } else if (zone < 4.0) {
+            baseColor = mix(color4, color5, fract(zone));
+          } else if (zone < 5.0) {
+            baseColor = mix(color5, color6, fract(zone));
+          } else if (zone < 6.0) {
+            baseColor = mix(color6, color7, fract(zone));
+          } else {
+            baseColor = mix(color7, color1, fract(zone));
+          }
+
+          float colorStrength = 0.15;
+          vec3 finalColor = mix(vec3(1.0), baseColor, colorStrength);
+          finalColor = mix(finalColor, vec3(0.0), 0.02);
+
+          gl_FragColor = vec4(finalColor, 1.0);
+        }
+      `;
+
+      const vertexShader = this.createShader2(this.gl2.VERTEX_SHADER, vertexShaderSource);
+      const fragmentShader = this.createShader2(this.gl2.FRAGMENT_SHADER, fragmentShaderSource);
+
+      this.program2 = this.gl2.createProgram();
+      this.gl2.attachShader(this.program2, vertexShader);
+      this.gl2.attachShader(this.program2, fragmentShader);
+      this.gl2.linkProgram(this.program2);
+
+      const posAttr = this.gl2.getAttribLocation(this.program2, 'a_position');
+      this.resUniform2 = this.gl2.getUniformLocation(this.program2, 'u_resolution');
+      this.timeUniform2 = this.gl2.getUniformLocation(this.program2, 'u_time');
+
+      const buffer = this.gl2.createBuffer();
+      this.gl2.bindBuffer(this.gl2.ARRAY_BUFFER, buffer);
+      this.gl2.bufferData(this.gl2.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), this.gl2.STATIC_DRAW);
+
+      this.gl2.enableVertexAttribArray(posAttr);
+      this.gl2.vertexAttribPointer(posAttr, 2, this.gl2.FLOAT, false, 0, 0);
+    },
+
+    createShader2(type, source) {
+      const shader = this.gl2.createShader(type);
+      this.gl2.shaderSource(shader, source);
+      this.gl2.compileShader(shader);
+      if (!this.gl2.getShaderParameter(shader, this.gl2.COMPILE_STATUS)) {
+        console.error('Comet shader 2 error:', this.gl2.getShaderInfoLog(shader));
+        return null;
+      }
+      return shader;
     }
   };
 
@@ -1623,6 +1816,7 @@
     image: null,
     imageContainer: null,
     title: null,
+    cause: null,
     text: null,
     particles: null,
     openTimeline: null,
@@ -1638,16 +1832,18 @@
       this.imageContainer = document.getElementById('muse-popup-image');
       this.image = document.getElementById('muse-popup-img');
       this.title = document.getElementById('muse-popup-title');
+      this.cause = document.getElementById('muse-popup-cause');
       this.text = document.getElementById('muse-popup-text');
       this.particles = document.getElementById('muse-popup-particles');
 
       if (!this.popup) return;
 
-      // Set initial state
+      // Set initial state (hide title above, show cause below)
       gsap.set(this.popup, { display: 'none', opacity: 0 });
       gsap.set(this.content, { scale: 0.7, opacity: 0 });
       gsap.set(this.imageContainer, { scale: 0.8, opacity: 0 });
-      gsap.set([this.title, this.text], { opacity: 0, y: 30 });
+      gsap.set(this.title, { display: 'none' }); // Hide title above card
+      gsap.set([this.cause, this.text], { opacity: 0, y: 30 });
 
       // Close on overlay click
       this.overlay.addEventListener('click', () => this.close());
@@ -1663,16 +1859,16 @@
       });
     },
 
-    open(name, description, color, imageSrc) {
+    open(causeTitle, description, color, imageSrc) {
       if (!this.popup || this.isOpen) return;
       this.isOpen = true;
       this.currentColor = color;
 
-      // Update content
-      this.title.textContent = name;
+      // Update content - cause and description below image
+      this.cause.textContent = causeTitle; // e.g., "Lunes · Water"
       this.text.textContent = description;
       this.image.src = imageSrc;
-      this.image.alt = name;
+      this.image.alt = causeTitle;
 
       // Set CSS custom property for color-based styling
       this.content.style.setProperty('--muse-color', color);
@@ -1711,8 +1907,8 @@
           opacity: 1,
           duration: 0.4,
         }, '-=0.4')
-        // Stagger in title and text
-        .to(this.title, {
+        // Stagger in cause and text (below image)
+        .to(this.cause, {
           opacity: 1,
           y: 0,
           duration: 0.4,
@@ -1743,8 +1939,8 @@
       });
 
       this.closeTimeline
-        // Fade out text elements
-        .to([this.text, this.title], {
+        // Fade out text elements (cause and description)
+        .to([this.text, this.cause], {
           opacity: 0,
           y: -20,
           duration: 0.2,
@@ -1826,6 +2022,7 @@
     orbitRadiusY: 0,
     animationTime: 0,
     orbitSpeed: 0.00015, // 240 seconds per rotation
+    isMobile: false,
 
     init() {
       this.container = document.getElementById('muse-section');
@@ -1836,10 +2033,14 @@
       }
 
       this.isInitialized = true;
-      this.calculateOrbitRadius();
+      this.updateLayout();
       this.applyColors();
       this.attachClickHandlers();
       this.startAnimation();
+    },
+
+    updateLayout() {
+      this.calculateOrbitRadius();
     },
 
     calculateOrbitRadius() {
@@ -1848,8 +2049,8 @@
 
       // Mobile: Vertical ellipse (taller than wide) for better centering
       if (viewportWidth <= 768) {
-        this.orbitRadiusX = Math.min(viewportHeight, viewportWidth) * 0.28;
-        this.orbitRadiusY = this.orbitRadiusX * 1.6; // Vertical ellipse - taller
+        this.orbitRadiusX = Math.min(viewportHeight, viewportWidth) * 0.35;
+        this.orbitRadiusY = this.orbitRadiusX * 1.8; // Vertical ellipse - taller
       }
       // Tablet: Slightly more vertical ellipse
       else if (viewportWidth <= 1024) {
@@ -1879,7 +2080,7 @@
       // Update animation time
       this.animationTime += deltaTime * this.orbitSpeed;
 
-      // Update each muse position
+      // Update each muse position (mobile only)
       this.items.forEach((item, index) => {
         const baseAngle = parseFloat(item.getAttribute('data-angle')) * (Math.PI / 180);
         const currentAngle = baseAngle + this.animationTime;
@@ -1907,6 +2108,7 @@
     attachClickHandlers() {
       this.items.forEach((item) => {
         const color = item.getAttribute('data-color');
+        const popupTitle = item.getAttribute('data-popup-title'); // e.g., "Lunes · Water"
         const heading = item.querySelector('.muse-text h3');
         const paragraph = item.querySelector('.muse-text p');
         const imageElement = item.querySelector('.muse-image img');
@@ -1914,10 +2116,10 @@
 
         // Make both image and heading clickable
         const clickHandler = () => {
-          const name = heading ? heading.textContent : '';
+          const cause = popupTitle || (heading ? heading.textContent : '');
           const description = paragraph ? paragraph.textContent : '';
           const imageSrc = imageElement ? imageElement.src : '';
-          MusePopup.open(name, description, color, imageSrc);
+          MusePopup.open(cause, description, color, imageSrc);
         };
 
         if (imageContainer) {
@@ -1934,7 +2136,7 @@
 
     handleResize() {
       if (this.isInitialized) {
-        this.calculateOrbitRadius();
+        this.updateLayout();
       }
     }
   };
@@ -2074,56 +2276,116 @@
   };
 
   // ==========================================================================
-  // SHINE ANIMATION - STARDUST & HORIZON
+  // FLOATING DRAGGABLE PROCESS IMAGES
   // ==========================================================================
-  function triggerShineAnimation(reverse = false) {
-    const stardustWord = document.querySelector('[data-shine="stardust"]');
-    const horizonWord = document.querySelector('[data-shine="horizon"]');
+  const FloatingProcesses = {
+    processes: [],
+    draggedElement: null,
+    offsetX: 0,
+    offsetY: 0,
+    isDragging: false,
 
-    if (!stardustWord || !horizonWord) return;
+    init() {
+      this.processes = Array.from(document.querySelectorAll('.floating-process'));
 
-    // Remove any existing animation classes
-    stardustWord.classList.remove('shine-active');
-    horizonWord.classList.remove('shine-active');
+      if (this.processes.length === 0) return;
 
-    // Trigger reflow to restart animation
-    void stardustWord.offsetWidth;
-    void horizonWord.offsetWidth;
+      // Set initial random positions for each process image
+      this.setInitialPositions();
 
-    if (reverse) {
-      // Scrolling back: Horizon shines first, then Stardust
-      horizonWord.classList.add('shine-active');
+      // Add event listeners for each process
+      this.processes.forEach(process => {
+        // Mouse events
+        process.addEventListener('mousedown', (e) => this.startDrag(e, process));
 
-      setTimeout(() => {
-        stardustWord.classList.add('shine-active');
-      }, 1000); // 1 second delay between animations
+        // Touch events
+        process.addEventListener('touchstart', (e) => this.startDrag(e, process), { passive: false });
+      });
 
-      // Clean up
-      setTimeout(() => {
-        horizonWord.classList.remove('shine-active');
-      }, 1600);
+      // Global mouse/touch move and end events
+      document.addEventListener('mousemove', (e) => this.drag(e));
+      document.addEventListener('mouseup', () => this.endDrag());
+      document.addEventListener('touchmove', (e) => this.drag(e), { passive: false });
+      document.addEventListener('touchend', () => this.endDrag());
+    },
 
-      setTimeout(() => {
-        stardustWord.classList.remove('shine-active');
-      }, 2600); // 1000ms delay + 1600ms animation
-    } else {
-      // Scrolling down: Stardust shines first, then Horizon
-      stardustWord.classList.add('shine-active');
+    setInitialPositions() {
+      // Define initial positions (percentage-based for responsiveness)
+      const positions = [
+        { top: '15%', left: '10%' },
+        { top: '25%', left: '75%' },
+        { top: '50%', left: '15%' },
+        { top: '60%', left: '80%' },
+        { top: '75%', left: '45%' }
+      ];
 
-      setTimeout(() => {
-        horizonWord.classList.add('shine-active');
-      }, 1000); // 1 second delay between animations
+      this.processes.forEach((process, index) => {
+        const pos = positions[index];
+        process.style.top = pos.top;
+        process.style.left = pos.left;
+      });
+    },
 
-      // Clean up
-      setTimeout(() => {
-        stardustWord.classList.remove('shine-active');
-      }, 1600);
+    startDrag(e, element) {
+      e.preventDefault();
+      this.isDragging = true;
+      this.draggedElement = element;
 
-      setTimeout(() => {
-        horizonWord.classList.remove('shine-active');
-      }, 2600); // 1000ms delay + 1600ms animation
+      // Disable floating animation while dragging
+      element.style.animation = 'none';
+
+      // Get cursor/touch position
+      const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+      const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+      // Calculate offset between cursor and element position
+      const rect = element.getBoundingClientRect();
+      this.offsetX = clientX - rect.left;
+      this.offsetY = clientY - rect.top;
+    },
+
+    drag(e) {
+      if (!this.isDragging || !this.draggedElement) return;
+
+      e.preventDefault();
+
+      // Get cursor/touch position
+      const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+      const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+      // Get parent container dimensions
+      const parent = this.draggedElement.parentElement;
+      const parentRect = parent.getBoundingClientRect();
+      const elementRect = this.draggedElement.getBoundingClientRect();
+
+      // Calculate new position relative to parent
+      let newLeft = clientX - parentRect.left - this.offsetX;
+      let newTop = clientY - parentRect.top - this.offsetY;
+
+      // Constrain within parent bounds
+      newLeft = Math.max(0, Math.min(newLeft, parentRect.width - elementRect.width));
+      newTop = Math.max(0, Math.min(newTop, parentRect.height - elementRect.height));
+
+      // Apply position
+      this.draggedElement.style.left = `${newLeft}px`;
+      this.draggedElement.style.top = `${newTop}px`;
+    },
+
+    endDrag() {
+      if (!this.isDragging) return;
+
+      this.isDragging = false;
+
+      if (this.draggedElement) {
+        // Re-enable floating animation
+        const processIndex = this.draggedElement.getAttribute('data-process');
+        const delay = (parseInt(processIndex) - 1) * 1.2;
+        this.draggedElement.style.animation = `float 6s ease-in-out ${delay}s infinite`;
+
+        this.draggedElement = null;
+      }
     }
-  }
+  };
 
   // ==========================================================================
   // METHOD TOGGLE (STARDUST/HORIZON)
@@ -2272,6 +2534,50 @@
 
     getCurrentMethod() {
       return this.currentMethod;
+    }
+  };
+
+  // ==========================================================================
+  // PARTNERSHIP SLIDER MODULE - Horizontal Infinite Scroll
+  // ==========================================================================
+  const PartnershipSlider = {
+    container: null,
+
+    // Placeholder partnership logos (replace with actual paths when available)
+    logos: [
+      { src: 'assets/images/partnerships/partner1.png', alt: 'Partner 1', href: '#' },
+      { src: 'assets/images/partnerships/partner2.png', alt: 'Partner 2', href: '#' },
+      { src: 'assets/images/partnerships/partner3.png', alt: 'Partner 3', href: '#' },
+      { src: 'assets/images/partnerships/partner4.png', alt: 'Partner 4', href: '#' },
+      { src: 'assets/images/partnerships/partner5.png', alt: 'Partner 5', href: '#' },
+    ],
+
+    init() {
+      this.container = document.getElementById('partnership-slideshow');
+      if (!this.container) return;
+
+      // Create track wrapper
+      const track = document.createElement('div');
+      track.className = 'partnership-track';
+
+      // Add logos twice for seamless infinite scroll
+      const createLogoHTML = (logo, index) => `
+        <a href="${logo.href}" target="_blank" rel="noopener noreferrer" aria-label="${logo.alt}">
+          <img src="${logo.src}" alt="${logo.alt}" class="partnership-logo" loading="lazy">
+        </a>
+      `;
+
+      // First set
+      this.logos.forEach((logo, i) => {
+        track.innerHTML += createLogoHTML(logo, i);
+      });
+
+      // Duplicate set for seamless loop
+      this.logos.forEach((logo, i) => {
+        track.innerHTML += createLogoHTML(logo, i + this.logos.length);
+      });
+
+      this.container.appendChild(track);
     }
   };
 
@@ -2471,8 +2777,14 @@
     // Initialize comet connection lines
     CometConnections.init();
 
+    // Initialize floating draggable process images
+    FloatingProcesses.init();
+
     // Initialize method toggle (Stardust/Horizon)
     MethodToggle.init();
+
+    // Initialize partnership slider
+    PartnershipSlider.init();
 
     // Initialize step popup
     StepPopup.init();
@@ -2484,5 +2796,43 @@
 
   // Start the application
   init();
+
+  // ==========================================================================
+  // EXPOSE GLOBAL FUNCTIONS FOR INLINE HANDLERS
+  // ==========================================================================
+  // Make switchTab available globally for inline onclick handlers
+  window.switchTab = function(method) {
+    const stardust = document.getElementById('panel-stardust');
+    const horizon = document.getElementById('panel-horizon');
+    const tabStardust = document.getElementById('tab-stardust');
+    const tabHorizon = document.getElementById('tab-horizon');
+    const slider = document.getElementById('pillSlider');
+
+    if (!stardust || !horizon || !tabStardust || !tabHorizon || !slider) return;
+
+    if (method === 'stardust') {
+      // Show Stardust panel
+      stardust.classList.add('active');
+      horizon.classList.remove('active');
+
+      // Update button states
+      tabStardust.classList.add('active');
+      tabHorizon.classList.remove('active');
+
+      // Move slider to left
+      slider.classList.remove('right');
+    } else if (method === 'horizon') {
+      // Show Horizon panel
+      horizon.classList.add('active');
+      stardust.classList.remove('active');
+
+      // Update button states
+      tabHorizon.classList.add('active');
+      tabStardust.classList.remove('active');
+
+      // Move slider to right
+      slider.classList.add('right');
+    }
+  };
 
 })();
