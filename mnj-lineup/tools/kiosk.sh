@@ -22,7 +22,9 @@ pick_day() {
 DAY=$(pick_day "$1")
 DIR="$FRAMES_DIR/day$DAY"
 
-setterm -cursor off 2>/dev/null
+# Hide the text cursor and stop the console from blanking/powering down.
+setterm -cursor off -blank 0 -powerdown 0 2>/dev/null
+printf '\033[?25l' > /dev/tty1 2>/dev/null
 printf '\033[?25l'
 
 SLEEP_S=$(awk "BEGIN{printf \"%.3f\", $FLICKER_MS/1000}")
