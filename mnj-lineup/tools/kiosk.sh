@@ -1,15 +1,18 @@
 #!/bin/sh
 # MNJ 2026 framebuffer kiosk.
 # Picks the day's frame set by date (8h backshift so a party running past
-# midnight still counts as the night it started on) and shows the frames on
-# the console framebuffer with fbi, cycling them to fake the neon blink.
+# midnight still counts as the night it started on), shows the frames with fbi
+# on the console framebuffer, and drives a fast frame advance via TIOCSTI
+# (flicker.py) to fake the neon blink. One fbi process, no relaunch thrash.
 #
 #   Fri Jun 26 2026 -> day1
 #   Sat Jun 27 2026 -> day2
 # Override: pass 1 or 2 as $1, or set MNJ_DAY=1|2 in the environment.
 
 FRAMES_DIR="${MNJ_FRAMES:-/home/mos/kiosk_frames}"
-CYCLE="${MNJ_CYCLE:-1}"   # fbi seconds per frame (integer; min 1)
+TOOLS_DIR="${MNJ_TOOLS:-/home/mos/static-websites/mnj-lineup/tools}"
+TTY="${MNJ_TTY:-/dev/tty1}"
+FLICKER_S="${MNJ_FLICKER_S:-0.2}"   # seconds between frame advances
 
 pick_day() {
   if [ "$1" = "1" ] || [ "$1" = "2" ]; then echo "$1"; return; fi
@@ -25,10 +28,16 @@ DIR="$FRAMES_DIR/day$DAY"
 dmesg -n 1 2>/dev/null
 setterm -cursor off -blank 0 -powerdown 0 2>/dev/null
 
-# Never return to a shell prompt: if fbi ever exits, clear and relaunch.
-# fbi cycles the frames on its own timer (-t), looping by default.
-while :; do
-  fbi -d /dev/fb0 -T 1 -a --noverbose -t "$CYCLE" "$DIR"/frame*.png
-  clear 2>/dev/null
-  sleep 1
-done
+# Show the frames (fbi stays running on the console, default loops).
+fbi -d /dev/fb0 -T 1 -a --noverbose "$DIR"/frame*.png &
+FBI_PID=$!
+
+# Let fbi grab the console and draw the first frame.
+sleep 3
+
+cleanup() { kill "$FBI_PID" 2>/dev/null; }
+trap cleanup INT TERM EXIT
+
+# Drive the fast neon flicker by injecting 'j' (next image) into the console.
+# Runs as long as fbi lives; if fbi dies, the driver exits and so do we.
+exec python3 "$TOOLS_DIR/flicker.py" "$TTY" "$FLICKER_S"
