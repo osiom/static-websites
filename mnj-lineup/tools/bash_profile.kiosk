@@ -1,0 +1,6 @@
+# Installed as ~/.bash_profile on the kiosk Pi.
+# On tty1 autologin, launch the framebuffer kiosk. Other ttys/SSH log in normally.
+[ -f ~/.profile ] && . ~/.profile
+if [ "$(tty)" = "/dev/tty1" ]; then
+  exec /home/mos/static-websites/mnj-lineup/tools/kiosk.sh
+fi
