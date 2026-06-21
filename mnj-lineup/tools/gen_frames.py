@@ -5,6 +5,7 @@ Each day gets a folder of frames; across frames a random subset of DJ names is
 dimmed to fake the faulty-neon blink. fbi cycles the frames on the Pi.
 """
 
+import argparse
 import os
 import random
 from PIL import Image, ImageDraw, ImageFont
@@ -15,9 +16,22 @@ random.seed(2026)
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 FONT_PATH = os.path.join(ROOT, "assets", "fonts", "ScribbleWire.ttf")
-OUT = os.path.join(ROOT, "kiosk_frames")
 
-W, H = 1280, 720
+# HDMI (720p) vs PAL composite for the CRT. Composite is 720x576 but a CRT
+# overscans, so we draw the whole scene inside a safe inset and never near the
+# physical edge. Output dirs are separate so both sets can ship together.
+# mscale shrinks the monsters relative to their nominal width fraction. On the
+# small 720px composite canvas the full-size monsters left only ~240px for the
+# lineup (too narrow for "João Comazzi"), so they're scaled down there.
+#
+# PAL framebuffer is always 720x576, but a 4:3 tube stretches those pixels
+# vertically (non-square pixels). We still render a 720x576 PNG (that's what the
+# framebuffer is), and sdtv_aspect=2 tells the firmware to present it 4:3. The
+# layout adapts via the H-relative fractions, so it stays balanced on the tube.
+MODES = {
+    "hdmi": dict(W=1280, H=720, out="kiosk_frames", inset=0, mscale=1.0),
+    "composite": dict(W=720, H=576, out="kiosk_frames_pal", inset=48, mscale=0.4),
+}
 BG = (25, 242, 2)            # #19f202
 MONSTER = (198, 0, 237)      # #c600ed
 DJ_COLORS = {
@@ -48,18 +62,25 @@ LINEUPS = {
 }
 
 FRAMES_PER_DAY = 6
-TIME_SIZE = 40
-DJ_SIZE = 52
-ROW_GAP = 22
-COL_GAP = 44
-TOP_BIAS = 24  # slight downward bias
-SIDE_MARGIN = 40  # keep the whole block this far from screen edges
+# Type/spacing as a fraction of canvas height so both resolutions look alike.
+TIME_FRAC = 40 / 720
+DJ_FRAC = 52 / 720
+ROW_GAP_FRAC = 22 / 720
+COL_GAP_FRAC = 44 / 1280
+TOP_BIAS_FRAC = 24 / 720
 
-# Monsters scaled down to frame the corners without crowding the text.
-m1 = Image.open("/tmp/monster1_big.png").convert("RGBA")  # bottom-left
-m2 = Image.open("/tmp/monster2_big.png").convert("RGBA")  # top-right
-m1 = m1.resize((int(m1.width * 0.62), int(m1.height * 0.62)), Image.LANCZOS)
-m2 = m2.resize((int(m2.width * 0.5), int(m2.height * 0.5)), Image.LANCZOS)
+# Monster footprint as a fraction of canvas width. The old 1280-wide frames used
+# 0.62*460=285px (bottom-left) and 0.5*720=360px (top-right); keep those ratios.
+M1_WFRAC = 0.62 * 460 / 1280  # bottom-left, ~0.223 of width
+M2_WFRAC = 0.5 * 720 / 1280   # top-right, ~0.281 of width
+
+_m1_src = Image.open("/tmp/monster1_big.png").convert("RGBA")  # bottom-left
+_m2_src = Image.open("/tmp/monster2_big.png").convert("RGBA")  # top-right
+
+
+def scale_to_width(img, target_w):
+    f = target_w / img.width
+    return img.resize((int(img.width * f), int(img.height * f)), Image.LANCZOS)
 
 
 # Fallback font for glyphs ScribbleWire lacks (accents like ã, ï).
@@ -77,8 +98,14 @@ def load_font(size):
     return ImageFont.truetype(FONT_PATH, size)
 
 
+# ScribbleWire's hand-drawn caps are much taller than Arial at the same point
+# size, so an accented glyph borrowed from Arial looks like a shrunken
+# superscript. Oversize the fallback so its cap-height roughly matches.
+FALLBACK_SCALE = 1.5
+
+
 def load_fallback(size):
-    return ImageFont.truetype(FALLBACK_PATH, size)
+    return ImageFont.truetype(FALLBACK_PATH, round(size * FALLBACK_SCALE))
 
 
 def runs(txt):
@@ -94,13 +121,17 @@ def runs(txt):
 
 
 def measure(draw, txt, scribble, fallback):
-    """Total advance width and max ascent/descent for mixed-font text."""
+    """Width and baseline-relative top/bottom for mixed-font text.
+
+    top/bot are measured from the shared baseline (anchor 'ls'), so glyphs from
+    different fonts line up on one baseline instead of by their bbox tops.
+    """
     w = 0
     top = 0
     bot = 0
     for s, fb in runs(txt):
         font = fallback if fb else scribble
-        b = draw.textbbox((0, 0), s, font=font)
+        b = draw.textbbox((0, 0), s, font=font, anchor="ls")
         w += draw.textlength(s, font=font)
         top = min(top, b[1])
         bot = max(bot, b[3])
@@ -108,36 +139,45 @@ def measure(draw, txt, scribble, fallback):
 
 
 def draw_mixed(draw, xy, txt, scribble, fallback, fill):
-    """Draw text left-to-right switching to the fallback font per glyph run."""
+    """Draw left-to-right switching fonts per run, all on one baseline.
+
+    xy is the left end of the baseline (anchor 'ls').
+    """
     x, y = xy
     for s, fb in runs(txt):
         font = fallback if fb else scribble
-        draw.text((x, y), s, font=font, fill=fill)
+        draw.text((x, y), s, font=font, fill=fill, anchor="ls")
         x += draw.textlength(s, font=font)
 
 
-def text_size(draw, txt, font):
-    b = draw.textbbox((0, 0), txt, font=font)
-    return b[2] - b[0], b[3] - b[1]
-
-
-def render_frame(day, frame_idx):
+def render_frame(cfg, m1, m2, day, frame_idx):
+    W, H, inset = cfg["W"], cfg["H"], cfg["inset"]
     img = Image.new("RGB", (W, H), BG)
 
     # Monsters first (behind text). monster2 top-right, monster1 bottom-left.
-    img.paste(m2, (W - m2.width + 10, -10), m2)
-    img.paste(m1, (-20, H - m1.height + 20), m1)
+    # On composite they hug the safe inset, not the physical (overscanned) edge.
+    img.paste(m2, (W - m2.width - inset, inset), m2)
+    img.paste(m1, (inset, H - m1.height - inset), m1)
 
     draw = ImageDraw.Draw(img)
     slots = LINEUPS[day]
 
-    # The lineup block must fit between the bottom-left monster and the right
-    # margin, so the available width excludes the monster's footprint.
-    LEFT_GUARD = m1.width + 20
-    avail_w = W - SIDE_MARGIN - LEFT_GUARD
+    COL_GAP = round(COL_GAP_FRAC * W)
+    ROW_GAP = round(ROW_GAP_FRAC * H)
+    TOP_BIAS = round(TOP_BIAS_FRAC * H)
+    min_dj = round(DJ_FRAC * H * 0.54)  # don't shrink below ~54% of nominal
+
+    # The lineup block must clear BOTH monsters: the bottom-left one (LEFT_GUARD)
+    # and the top-right one (RIGHT_GUARD). The block is vertically centered, so
+    # the top rows sit exactly where the top-right monster is — guard that edge
+    # too or the first name draws over it (it did before this guard existed).
+    pad = round(20 / 1280 * W)
+    LEFT_GUARD = inset + m1.width + pad
+    RIGHT_GUARD = inset + m2.width + pad
+    avail_w = W - RIGHT_GUARD - LEFT_GUARD
 
     # Shrink fonts until the widest row fits that available width.
-    time_size, dj_size = TIME_SIZE, DJ_SIZE
+    time_size, dj_size = round(TIME_FRAC * H), round(DJ_FRAC * H)
     while True:
         time_font = load_font(time_size)
         time_fb = load_fallback(time_size)
@@ -146,7 +186,7 @@ def render_frame(day, frame_idx):
         time_w_max = max(measure(draw, t, time_font, time_fb)[0] for t, _ in slots)
         dj_w_max = max(measure(draw, d, dj_font, dj_fb)[0] for _, d in slots)
         block_w = time_w_max + COL_GAP + dj_w_max
-        if block_w <= avail_w or dj_size <= 28:
+        if block_w <= avail_w or dj_size <= min_dj:
             break
         time_size -= 2
         dj_size -= 2
@@ -177,15 +217,17 @@ def render_frame(day, frame_idx):
     for i, (t, d) in enumerate(slots):
         rh = row_heights[i]
         tw, tt, tbot = measure(draw, t, time_font, time_fb)
-        # time (purple, right-aligned); subtract bbox top so baseline aligns
-        draw_mixed(draw, (time_right_x - tw, y - tt + (rh - (tbot - tt)) // 2),
+        # time (purple, right-aligned); place on a baseline centered in the row.
+        t_base = y + (rh - (tbot - tt)) // 2 - tt
+        draw_mixed(draw, (time_right_x - tw, t_base),
                    t, time_font, time_fb, MONSTER)
         # dj name (cycling color, left-aligned), dimmed if off this frame
         color = DJ_COLORS[DJ_ORDER[i % len(DJ_ORDER)]]
         if i in off:
             color = dim(color)
         dw, dt, dbot = measure(draw, d, dj_font, dj_fb)
-        draw_mixed(draw, (dj_left_x, y - dt + (rh - (dbot - dt)) // 2),
+        d_base = y + (rh - (dbot - dt)) // 2 - dt
+        draw_mixed(draw, (dj_left_x, d_base),
                    d, dj_font, dj_fb, color)
         y += rh + ROW_GAP
 
@@ -193,13 +235,26 @@ def render_frame(day, frame_idx):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--mode", choices=MODES, default="hdmi",
+                    help="hdmi (1280x720) or composite (720x576 PAL, overscan-safe)")
+    args = ap.parse_args()
+    cfg = MODES[args.mode]
+    W = cfg["W"]
+
+    ms = cfg["mscale"]
+    m1 = scale_to_width(_m1_src, round(M1_WFRAC * W * ms))
+    m2 = scale_to_width(_m2_src, round(M2_WFRAC * W * ms))
+
+    out = os.path.join(ROOT, cfg["out"])
     for day in (1, 2):
-        d = os.path.join(OUT, f"day{day}")
+        d = os.path.join(out, f"day{day}")
         os.makedirs(d, exist_ok=True)
         for f in range(FRAMES_PER_DAY):
-            img = render_frame(day, f)
+            img = render_frame(cfg, m1, m2, day, f)
             img.save(os.path.join(d, f"frame{f:02d}.png"))
-        print(f"day{day}: {FRAMES_PER_DAY} frames -> {d}")
+        print(f"[{args.mode}] day{day}: {FRAMES_PER_DAY} frames "
+              f"({cfg['W']}x{cfg['H']}) -> {d}")
 
 
 if __name__ == "__main__":
