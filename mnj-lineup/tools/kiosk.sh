@@ -1,16 +1,15 @@
 #!/bin/sh
 # MNJ 2026 framebuffer kiosk.
 # Picks the day's frame set by date (8h backshift so a party running past
-# midnight still counts as the night it started on), preloads the frames in
-# fbi, then advances frames fast via stdin to fake the neon blink (fbi's own
-# -t timer can't go below 1s; 'j' on stdin = next image).
+# midnight still counts as the night it started on) and shows the frames on
+# the console framebuffer with fbi, cycling them to fake the neon blink.
 #
 #   Fri Jun 26 2026 -> day1
 #   Sat Jun 27 2026 -> day2
 # Override: pass 1 or 2 as $1, or set MNJ_DAY=1|2 in the environment.
 
 FRAMES_DIR="${MNJ_FRAMES:-/home/mos/kiosk_frames}"
-FLICKER_MS="${MNJ_FLICKER_MS:-200}"   # ms between frame advances
+CYCLE="${MNJ_CYCLE:-1}"   # fbi seconds per frame (integer; min 1)
 
 pick_day() {
   if [ "$1" = "1" ] || [ "$1" = "2" ]; then echo "$1"; return; fi
@@ -22,18 +21,14 @@ pick_day() {
 DAY=$(pick_day "$1")
 DIR="$FRAMES_DIR/day$DAY"
 
-# Hide the text cursor and stop the console from blanking/powering down.
+# Quiet the kernel console + hide cursor so nothing draws over the image.
+dmesg -n 1 2>/dev/null
 setterm -cursor off -blank 0 -powerdown 0 2>/dev/null
-printf '\033[?25l' > /dev/tty1 2>/dev/null
-printf '\033[?25l'
 
-SLEEP_S=$(awk "BEGIN{printf \"%.3f\", $FLICKER_MS/1000}")
-
-# Feed 'j' (next image) into fbi's stdin forever -> fast frame cycling.
-# fbi wraps from the last frame back to the first.
-{
-  while :; do
-    printf 'j'
-    sleep "$SLEEP_S"
-  done
-} | fbi -d /dev/fb0 -T 1 -a --noverbose "$DIR"/frame*.png
+# Never return to a shell prompt: if fbi ever exits, clear and relaunch.
+# fbi cycles the frames on its own timer (-t), looping by default.
+while :; do
+  fbi -d /dev/fb0 -T 1 -a --noverbose -t "$CYCLE" "$DIR"/frame*.png
+  clear 2>/dev/null
+  sleep 1
+done
