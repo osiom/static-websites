@@ -30,17 +30,22 @@ FONT_PATH = os.path.join(ROOT, "assets", "fonts", "ScribbleWire.ttf")
 # layout adapts via the H-relative fractions, so it stays balanced on the tube.
 MODES = {
     "hdmi": dict(W=1280, H=720, out="kiosk_frames", inset=0, mscale=1.0),
-    "composite": dict(W=720, H=576, out="kiosk_frames_pal", inset=48, mscale=0.4),
+    "composite": dict(W=720, H=576, out="kiosk_frames_pal", inset=48, mscale=0.8),
 }
 BG = (25, 242, 2)            # #19f202
 MONSTER = (198, 0, 237)      # #c600ed
+# Times are cyan, not purple: purple times vanished where they crossed the
+# (now larger, overlapping) purple monsters. Cyan pops on both green and purple.
+TIME_COLOR = (2, 247, 222)   # #02f7de
 DJ_COLORS = {
     "blue": (32, 68, 232),       # #2044e8
     "red": (241, 13, 27),        # #f10d1b
     "yellow": (246, 235, 2),     # #f6eb02
     "lightblue": (2, 247, 222),  # #02f7de
 }
-DJ_ORDER = ["blue", "red", "yellow", "lightblue"]
+# lightblue (cyan) is reserved for the time text now, so it's out of the name
+# cycle to avoid name/time color clashes.
+DJ_ORDER = ["blue", "red", "yellow"]
 
 # Dimmed = the "off" half of the neon flicker. Multiply toward bg green.
 def dim(color, f=0.45):
@@ -167,14 +172,12 @@ def render_frame(cfg, m1, m2, day, frame_idx):
     TOP_BIAS = round(TOP_BIAS_FRAC * H)
     min_dj = round(DJ_FRAC * H * 0.54)  # don't shrink below ~54% of nominal
 
-    # The lineup block must clear BOTH monsters: the bottom-left one (LEFT_GUARD)
-    # and the top-right one (RIGHT_GUARD). The block is vertically centered, so
-    # the top rows sit exactly where the top-right monster is — guard that edge
-    # too or the first name draws over it (it did before this guard existed).
+    # Monsters are big and decorative now and may sit BEHIND the text; the names
+    # use colors that pop on purple, so we no longer guard against them. The
+    # lineup just centers in the full width inside the safe inset.
     pad = round(20 / 1280 * W)
-    LEFT_GUARD = inset + m1.width + pad
-    RIGHT_GUARD = inset + m2.width + pad
-    avail_w = W - RIGHT_GUARD - LEFT_GUARD
+    LEFT_GUARD = inset + pad
+    avail_w = W - 2 * (inset + pad)
 
     # Shrink fonts until the widest row fits that available width.
     time_size, dj_size = round(TIME_FRAC * H), round(DJ_FRAC * H)
@@ -220,7 +223,7 @@ def render_frame(cfg, m1, m2, day, frame_idx):
         # time (purple, right-aligned); place on a baseline centered in the row.
         t_base = y + (rh - (tbot - tt)) // 2 - tt
         draw_mixed(draw, (time_right_x - tw, t_base),
-                   t, time_font, time_fb, MONSTER)
+                   t, time_font, time_fb, TIME_COLOR)
         # dj name (cycling color, left-aligned), dimmed if off this frame
         color = DJ_COLORS[DJ_ORDER[i % len(DJ_ORDER)]]
         if i in off:
