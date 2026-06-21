@@ -1,0 +1,210 @@
+/* =============================================
+   MNJ 2026 — Inside dancefloor lineup
+   Target: CRT 1280 x 720 (16:9), Chromium kiosk on a Pi.
+   ============================================= */
+
+@font-face {
+  font-family: 'ScribbleWire';
+  src: url('../assets/fonts/ScribbleWire.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --color-bg: #19f202;       /* festival green */
+  --color-monster: #c600ed;  /* purple monsters */
+  --font-display: 'ScribbleWire', sans-serif;
+  --track: -0.06em;
+
+  /* DJ name palette (reference site order). */
+  --dj-blue: #2044e8;
+  --dj-red: #f10d1b;
+  --dj-yellow: #f6eb02;
+  --dj-lightblue: #02f7de;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-display);
+  background-color: var(--color-bg);
+  color: var(--color-monster);
+  cursor: none;
+}
+
+.scene {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* --- Monsters (purple, framing the lineup) --- */
+.scene__star {
+  position: absolute;
+  z-index: 0;
+  top: -10px;
+  right: -40px;
+  width: 360px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.scene__monster {
+  position: absolute;
+  z-index: 0;
+  left: 16px;
+  bottom: 12px;
+  width: 230px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.scene__star-img,
+.scene__monster-img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Recolor the SVG line art to purple. */
+.scene__star-img,
+.scene__monster-img {
+  filter: brightness(0) saturate(100%) invert(18%) sepia(95%)
+          saturate(7400%) hue-rotate(286deg) brightness(95%) contrast(118%);
+}
+
+/* --- Lineup block, centred --- */
+.lineup {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  /* top padding > bottom biases the centered block lower,
+     away from the top-right monster */
+  padding: 200px 60px 32px 320px;
+  letter-spacing: var(--track);
+  line-height: 1;
+}
+
+.lineup__day {
+  font-size: 92px;
+  color: var(--color-monster);
+  margin-bottom: 14px;
+}
+
+.lineup__list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: max-content max-content;
+  align-items: baseline;
+  column-gap: 40px;
+  row-gap: 18px;
+}
+
+/* Day sub-header spans both columns. */
+.lineup__date {
+  grid-column: 1 / -1;
+  justify-self: center;
+  font-size: 40px;
+  color: var(--color-monster);
+  margin-top: 14px;
+}
+
+/* Each slot contributes a time cell (col 1) and a dj cell (col 2). */
+.lineup__slot {
+  display: contents;
+}
+
+.lineup__time {
+  grid-column: 1;
+  justify-self: end;
+  font-size: 36px;
+  color: var(--color-monster);
+  white-space: nowrap;
+}
+
+.lineup__dj {
+  grid-column: 2;
+  justify-self: start;
+  font-size: 46px;
+  white-space: nowrap;
+  /* duration + delay are randomized per-name in JS */
+  animation-name: blink;
+  animation-timing-function: step-end;
+  animation-iteration-count: infinite;
+}
+
+/* Cycle the four accent colors across DJ names.
+   Colors are assigned per-name in JS via the data-color attribute,
+   since display:contents flattens the slot wrapper. */
+.lineup__dj[data-color="blue"]      { color: var(--dj-blue); }
+.lineup__dj[data-color="red"]       { color: var(--dj-red); }
+.lineup__dj[data-color="yellow"]    { color: var(--dj-yellow); }
+.lineup__dj[data-color="lightblue"] { color: var(--dj-lightblue); }
+
+/* Irregular double-flicker — on most of the cycle, then a quick
+   off/on/off/on stutter so it reads like a faulty neon tube. */
+@keyframes blink {
+  0%   { opacity: 1; }
+  78%  { opacity: 1; }
+  80%  { opacity: 0; }
+  83%  { opacity: 1; }
+  85%  { opacity: 0; }
+  88%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* Day Two has an extra row — keep the same big text as Day One,
+   just a slightly tighter row gap so all 5 slots fit 720px. */
+.is-day-2 .lineup__list { row-gap: 14px; }
+
+/* --- Subtle CRT overlay ---
+   Faint scanlines + a soft, irregular brightness flicker. Kept light
+   because this also runs on a real CRT that already has its own glow. */
+.crt {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.12) 0px,
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+  animation: crt-flicker 5.2s steps(1) infinite;
+}
+
+/* Tiny opacity wobble at irregular steps → gentle "live signal" feel. */
+@keyframes crt-flicker {
+  0%   { opacity: 0.85; }
+  7%   { opacity: 0.92; }
+  13%  { opacity: 0.82; }
+  21%  { opacity: 0.90; }
+  34%  { opacity: 0.86; }
+  48%  { opacity: 0.93; }
+  55%  { opacity: 0.84; }
+  67%  { opacity: 0.90; }
+  78%  { opacity: 0.83; }
+  89%  { opacity: 0.91; }
+  100% { opacity: 0.86; }
+}
