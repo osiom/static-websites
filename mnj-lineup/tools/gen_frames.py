@@ -113,48 +113,41 @@ def load_fallback(size):
     return ImageFont.truetype(FALLBACK_PATH, round(size * FALLBACK_SCALE))
 
 
-def runs(txt):
-    """Split text into (string, uses_fallback) runs by glyph availability."""
-    out = []
-    for ch in txt:
-        fb = not has_glyph(ch)
-        if out and out[-1][1] == fb:
-            out[-1] = (out[-1][0] + ch, fb)
-        else:
-            out.append((ch, fb))
-    return out
-
-
-def measure(draw, txt, scribble, fallback):
+def measure(draw, txt, scribble, fallback, track=0):
     """Width and baseline-relative top/bottom for mixed-font text.
 
     top/bot are measured from the shared baseline (anchor 'ls'), so glyphs from
     different fonts line up on one baseline instead of by their bbox tops.
+    track adds px between characters (so faux-bold letters don't run together).
     """
     w = 0
     top = 0
     bot = 0
-    for s, fb in runs(txt):
-        font = fallback if fb else scribble
-        b = draw.textbbox((0, 0), s, font=font, anchor="ls")
-        w += draw.textlength(s, font=font)
+    n = 0
+    for ch in txt:
+        font = fallback if not has_glyph(ch) else scribble
+        b = draw.textbbox((0, 0), ch, font=font, anchor="ls")
+        w += draw.textlength(ch, font=font)
         top = min(top, b[1])
         bot = max(bot, b[3])
+        n += 1
+    w += track * max(0, n - 1)
     return int(w), top, bot
 
 
-def draw_mixed(draw, xy, txt, scribble, fallback, fill, bold=0):
-    """Draw left-to-right switching fonts per run, all on one baseline.
+def draw_mixed(draw, xy, txt, scribble, fallback, fill, bold=0, track=0):
+    """Draw character-by-character on one baseline, switching fonts per glyph.
 
     xy is the left end of the baseline (anchor 'ls'). bold > 0 thickens the
-    strokes (faux-bold via stroke_width) since the font has no bold weight.
+    strokes (faux-bold) and track adds px between characters so the thicker
+    strokes don't merge into an unreadable blob.
     """
     x, y = xy
-    for s, fb in runs(txt):
-        font = fallback if fb else scribble
-        draw.text((x, y), s, font=font, fill=fill, anchor="ls",
+    for ch in txt:
+        font = fallback if not has_glyph(ch) else scribble
+        draw.text((x, y), ch, font=font, fill=fill, anchor="ls",
                   stroke_width=bold, stroke_fill=fill)
-        x += draw.textlength(s, font=font)
+        x += draw.textlength(ch, font=font) + track
 
 
 def render_frame(cfg, m1, m2, day, frame_idx):
@@ -181,15 +174,18 @@ def render_frame(cfg, m1, m2, day, frame_idx):
     LEFT_GUARD = inset + pad
     avail_w = W - 2 * (inset + pad)
 
-    # Shrink fonts until the widest row fits that available width.
+    # Shrink fonts until the widest row fits that available width. Names get
+    # letter-spacing (dj_track) so the faux-bold strokes don't merge; that extra
+    # width has to be part of the fit test or bold names would overflow.
     time_size, dj_size = round(TIME_FRAC * H), round(DJ_FRAC * H)
     while True:
         time_font = load_font(time_size)
         time_fb = load_fallback(time_size)
         dj_font = load_font(dj_size)
         dj_fb = load_fallback(dj_size)
+        dj_track = round(dj_size * 0.14)
         time_w_max = max(measure(draw, t, time_font, time_fb)[0] for t, _ in slots)
-        dj_w_max = max(measure(draw, d, dj_font, dj_fb)[0] for _, d in slots)
+        dj_w_max = max(measure(draw, d, dj_font, dj_fb, dj_track)[0] for _, d in slots)
         block_w = time_w_max + COL_GAP + dj_w_max
         if block_w <= avail_w or dj_size <= min_dj:
             break
@@ -203,7 +199,7 @@ def render_frame(cfg, m1, m2, day, frame_idx):
     row_heights = []
     for t, d in slots:
         _, tt, tb = measure(draw, t, time_font, time_fb)
-        _, dt, db = measure(draw, d, dj_font, dj_fb)
+        _, dt, db = measure(draw, d, dj_font, dj_fb, dj_track)
         row_heights.append(max(tb - tt, db - dt))
 
     total_h = sum(row_heights) + ROW_GAP * (len(slots) - 1)
@@ -234,10 +230,10 @@ def render_frame(cfg, m1, m2, day, frame_idx):
         color = DJ_COLORS[DJ_ORDER[i % len(DJ_ORDER)]]
         if i in off:
             color = dim(color)
-        dw, dt, dbot = measure(draw, d, dj_font, dj_fb)
+        dw, dt, dbot = measure(draw, d, dj_font, dj_fb, dj_track)
         d_base = y + (rh - (dbot - dt)) // 2 - dt
         draw_mixed(draw, (dj_left_x, d_base),
-                   d, dj_font, dj_fb, color, bold=dj_bold)
+                   d, dj_font, dj_fb, color, bold=dj_bold, track=dj_track)
         y += rh + ROW_GAP
 
     return img
