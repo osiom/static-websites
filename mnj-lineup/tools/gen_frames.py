@@ -30,7 +30,7 @@ FONT_PATH = os.path.join(ROOT, "assets", "fonts", "ScribbleWire.ttf")
 # layout adapts via the H-relative fractions, so it stays balanced on the tube.
 MODES = {
     "hdmi": dict(W=1280, H=720, out="kiosk_frames", inset=0, mscale=1.0),
-    "composite": dict(W=720, H=576, out="kiosk_frames_pal", inset=48, mscale=0.8),
+    "composite": dict(W=720, H=576, out="kiosk_frames_pal", inset=48, mscale=1.4),
 }
 BG = (25, 242, 2)            # #19f202
 MONSTER = (198, 0, 237)      # #c600ed
@@ -68,8 +68,8 @@ LINEUPS = {
 
 FRAMES_PER_DAY = 6
 # Type/spacing as a fraction of canvas height so both resolutions look alike.
-TIME_FRAC = 40 / 720
-DJ_FRAC = 52 / 720
+TIME_FRAC = 46 / 720
+DJ_FRAC = 60 / 720
 ROW_GAP_FRAC = 22 / 720
 COL_GAP_FRAC = 44 / 1280
 TOP_BIAS_FRAC = 24 / 720
@@ -143,15 +143,17 @@ def measure(draw, txt, scribble, fallback):
     return int(w), top, bot
 
 
-def draw_mixed(draw, xy, txt, scribble, fallback, fill):
+def draw_mixed(draw, xy, txt, scribble, fallback, fill, bold=0):
     """Draw left-to-right switching fonts per run, all on one baseline.
 
-    xy is the left end of the baseline (anchor 'ls').
+    xy is the left end of the baseline (anchor 'ls'). bold > 0 thickens the
+    strokes (faux-bold via stroke_width) since the font has no bold weight.
     """
     x, y = xy
     for s, fb in runs(txt):
         font = fallback if fb else scribble
-        draw.text((x, y), s, font=font, fill=fill, anchor="ls")
+        draw.text((x, y), s, font=font, fill=fill, anchor="ls",
+                  stroke_width=bold, stroke_fill=fill)
         x += draw.textlength(s, font=font)
 
 
@@ -194,6 +196,10 @@ def render_frame(cfg, m1, m2, day, frame_idx):
         time_size -= 2
         dj_size -= 2
 
+    # Faux-bold stroke width, proportional to each font size (min 1px).
+    time_bold = max(1, round(time_size * 0.045))
+    dj_bold = max(1, round(dj_size * 0.045))
+
     row_heights = []
     for t, d in slots:
         _, tt, tb = measure(draw, t, time_font, time_fb)
@@ -223,7 +229,7 @@ def render_frame(cfg, m1, m2, day, frame_idx):
         # time (purple, right-aligned); place on a baseline centered in the row.
         t_base = y + (rh - (tbot - tt)) // 2 - tt
         draw_mixed(draw, (time_right_x - tw, t_base),
-                   t, time_font, time_fb, TIME_COLOR)
+                   t, time_font, time_fb, TIME_COLOR, bold=time_bold)
         # dj name (cycling color, left-aligned), dimmed if off this frame
         color = DJ_COLORS[DJ_ORDER[i % len(DJ_ORDER)]]
         if i in off:
@@ -231,7 +237,7 @@ def render_frame(cfg, m1, m2, day, frame_idx):
         dw, dt, dbot = measure(draw, d, dj_font, dj_fb)
         d_base = y + (rh - (dbot - dt)) // 2 - dt
         draw_mixed(draw, (dj_left_x, d_base),
-                   d, dj_font, dj_fb, color)
+                   d, dj_font, dj_fb, color, bold=dj_bold)
         y += rh + ROW_GAP
 
     return img
