@@ -1,8 +1,14 @@
 # MNJ 2026 — Inside Dancefloor Lineup
 
 A static web page that displays the inside-dancefloor DJ lineup for the MNJ 2026
-festival, shown on a **CRT TV at 1280×720 (16:9)** driven by a **Raspberry Pi**
-running Chromium in fullscreen kiosk mode at boot.
+festival, shown on a **CRT TV** driven by a **Raspberry Pi**.
+
+> **How it actually runs:** the Pi is a 2012 Pi 1 (ARMv6, no NEON, 512 MB) that
+> can't run Chromium. So instead of a browser, the page is pre-rendered to PNG
+> **frames** and shown straight on the console framebuffer with `fbi` — no X, no
+> browser, near-zero CPU. The launcher is [`tools/kiosk.sh`](tools/kiosk.sh).
+> The web page (`index.html`) is still the source of truth for the design and is
+> handy for local preview, but it is **not** what runs at the festival.
 
 The visual style mirrors the ticket site [minijob.lat](https://minijob.lat):
 green background, the *Scribble Wire* hand-drawn font, purple monsters, and DJ
@@ -10,23 +16,24 @@ names blinking in cycling blue / red / yellow / light-blue.
 
 ## End goal
 
-- Pi powers on → boots straight into fullscreen Chromium → shows the correct
-  day's lineup. No keyboard, no mouse, no desktop.
+- Pi powers on → boots to a text console on tty1 → `kiosk.sh` shows the correct
+  day's frames fullscreen via `fbi`. No keyboard, no mouse, no desktop.
 - The festival runs **two nights**:
   - **Day One** — Friday 26 June 2026 (into Saturday morning)
   - **Day Two** — Saturday 27 June 2026 (into Sunday morning)
-- The page picks the day **by calendar date**, with an 8-hour backshift so that
-  when the clock rolls past midnight the party still counts as the night it
-  started on:
-  - Fri Jun 26 + Sat Jun 27 until ~14:00 → **Day One**
-  - Sat Jun 27 afternoon + Sun Jun 28 until ~14:00 → **Day Two**
+- The day is picked **by calendar date** with an 8-hour backshift, so a party
+  running past midnight still counts as the night it started on:
+  - Fri Jun 26 + Sat Jun 27 morning → **Day One**
+  - Sat Jun 27 from 08:00 + Sun Jun 28 → **Day Two**
+- `pick_day()` only runs **at startup**, so a Pi left running won't auto-flip.
+  Plan: power-cycle the TV during the Saturday daytime break to re-pick Day Two,
+  or force it manually (see **Manual recovery** below).
 
 ## Lineup
 
 **Day One**
 ```
-22:00 - 23:00   Emanuelle
-23:00 - 00:00   Emanuelle
+22:00 - 00:00   Emanuelle
 00:00 - 03:00   João Comazzi
 03:00 - 06:00   Oph
 ```
@@ -35,182 +42,207 @@ names blinking in cycling blue / red / yellow / light-blue.
 ```
 22:00 - 00:00   Elkï
 00:00 - 03:00   Panamoil
-03:00 - 06:00   Jo
+03:00 - 06:00   Djo
 06:00 - 09:00   Chami
 10:00 - 13:00   Minijob
 ```
 
-Lineup data lives in [`js/main.js`](js/main.js) (`LINEUPS`). Edit there to change
-times or names.
+Lineup data lives in **two** places and must be kept in sync:
+- [`js/main.js`](js/main.js) (`LINEUPS`) — the web page.
+- [`tools/gen_frames.py`](tools/gen_frames.py) (`LINEUPS`) — the rendered frames
+  (this is what the kiosk actually shows). After editing, **re-render the frames**
+  (see *Regenerating the frames*).
 
-## Switching the day manually
+## Regenerating the frames (on the Mac)
 
-The Pi should pick the day automatically, but if its clock is wrong you can
-override:
+The frames are committed to the repo, so the Pi just `git pull`s them — no
+rendering happens on the Pi. Render both modes after any text/layout change:
 
-- **Keyboard:** press `1` (Day One), `2` (Day Two), or `0` (back to auto).
-  The choice is saved in `localStorage` and survives reloads/reboots.
-- **URL:** `index.html?day=1` or `index.html?day=2`.
+```bash
+cd mnj-lineup/tools
+./.venv/bin/python gen_frames.py --mode hdmi        # 1280x720 -> ../kiosk_frames/
+./.venv/bin/python gen_frames.py --mode composite   # 720x576 PAL -> ../kiosk_frames_pal/
+```
+
+- `hdmi` → `kiosk_frames/day1|day2/frame00-05.png` (for an HDMI display / testing)
+- `composite` → `kiosk_frames_pal/day1|day2/...` (overscan-safe for the CRT)
+
+Then commit + push, and on the Pi `git pull` (while still online — the festival
+is offline).
 
 ## Project structure
 
 ```
 mnj-lineup/
 ├── index.html
-├── css/style.css          # 1280×720 layout, font, colors, blink
-├── js/main.js             # lineup data + day-picking logic
+├── css/style.css            # web preview layout, font, colors, blink
+├── js/main.js               # lineup data + day-picking logic (web)
 ├── assets/
 │   ├── fonts/ScribbleWire.ttf
-│   ├── monster1.svg       # bottom-left monster
-│   └── monster2.svg       # top-right star monster
-└── scribble_wire/         # original font download + license
+│   ├── monster1.svg         # bottom-left monster
+│   └── monster2.svg         # top-right star monster
+├── kiosk_frames/            # rendered HDMI frames (day1/, day2/)
+├── kiosk_frames_pal/        # rendered PAL composite frames (day1/, day2/)
+├── tools/
+│   ├── gen_frames.py        # renders the frames (run via .venv)
+│   ├── kiosk.sh             # the kiosk launcher (fbi + flicker)
+│   ├── flicker.py           # injects 'j' to advance fbi (fake neon blink)
+│   └── bash_profile.kiosk   # installed as ~/.bash_profile on the Pi
+└── scribble_wire/           # original font download + license
 ```
 
-## Local preview
+## Local preview (web page)
 
 ```bash
 cd mnj-lineup
 python3 -m http.server 8000
-# open http://localhost:8000  (press 2 to preview Day Two)
+# open http://localhost:8000  (press 2 to preview Day Two, 1 for Day One, 0 = auto)
 ```
 
 ---
 
-## Raspberry Pi kiosk setup
+## Raspberry Pi kiosk
 
-Target: Raspberry Pi OS (with desktop), auto-login enabled, Chromium launched
-at boot via a **systemd service**. Files live in a local clone and load over
-`file://` (no network needed at the festival).
+The Pi boots to a text console, autologins on **tty1**, and
+[`tools/bash_profile.kiosk`](tools/bash_profile.kiosk) (installed as
+`~/.bash_profile`) `exec`s `kiosk.sh`. That script:
 
-### 1. Get the files onto the Pi
+1. picks the day (`pick_day()` — date-based, overridable),
+2. runs `fbi` once on `/dev/fb0` to show `$MNJ_FRAMES/day$DAY/frame*.png`
+   (fbi loops the frames by default — **don't** wrap it in a relaunch loop, that
+   causes the black-flash flicker),
+3. `exec`s `flicker.py`, which injects the `j` (next image) key into the console
+   via the TIOCSTI ioctl every ~0.2 s to drive the fast neon blink.
 
-```bash
-git clone <this-repo-url> /home/pi/mnj-lineup
-```
+### kiosk.sh knobs (environment variables)
 
-The lineup page is then at:
-`file:///home/pi/mnj-lineup/index.html`
+`kiosk.sh` is configured entirely by env vars, with these defaults:
 
-### 2. Install Chromium and unclutter
+| Variable       | Default                                          | What it does                                  |
+|----------------|--------------------------------------------------|-----------------------------------------------|
+| `MNJ_FRAMES`   | `/home/mos/kiosk_frames`                         | Which frame set to show (HDMI vs PAL dir).    |
+| `MNJ_TOOLS`    | `/home/mos/static-websites/mnj-lineup/tools`     | Where `flicker.py` lives.                     |
+| `MNJ_TTY`      | `/dev/tty1`                                       | Console fbi/flicker drive.                    |
+| `MNJ_FLICKER_S`| `0.2`                                             | Seconds between frame advances.               |
+| `MNJ_DAY`      | *(unset)*                                         | Force `1` or `2`, bypassing the date logic.   |
 
-```bash
-sudo apt update
-sudo apt install -y chromium-browser unclutter
-```
+The first positional arg to `kiosk.sh` (`1` or `2`) also forces the day and wins
+over everything. Precedence: **arg `$1` > `MNJ_DAY` > date**.
 
-(`unclutter` hides the mouse pointer; the page also sets `cursor: none`.)
+> **Note on PAL vs HDMI:** `kiosk.sh` doesn't know about modes — it just shows
+> whatever directory `MNJ_FRAMES` points at. The Pi default
+> (`/home/mos/kiosk_frames`) is a symlink to the repo's `kiosk_frames/`. To run
+> the PAL set, point `MNJ_FRAMES` at `.../mnj-lineup/kiosk_frames_pal` (see below).
 
-### 3. Enable desktop auto-login
+---
 
-```bash
-sudo raspi-config
-# System Options → Boot / Auto Login → Desktop Autologin
-```
+## Manual recovery at the venue
 
-This ensures a graphical session (X / the desktop) is running for Chromium to
-draw into.
+If the kiosk comes up on the **wrong day** (clock/NTP wrong) or you need to swap
+the **frame set**, you don't need the laptop — plug a USB keyboard into the Pi.
+On tty1 the kiosk is running; switch to a free console with **Ctrl+Alt+F2**, log
+in (user `mos`, password auth), then use one of the recipes below. Switch back to
+the live screen with **Ctrl+Alt+F1**.
 
-### 4. Create the kiosk launch script
+Path reminders on the Pi:
+- frames repo: `/home/mos/static-websites/mnj-lineup/`
+- HDMI frames: `.../mnj-lineup/kiosk_frames`  (and the `~/kiosk_frames` symlink)
+- PAL frames:  `.../mnj-lineup/kiosk_frames_pal`
 
-`/home/pi/mnj-lineup/kiosk.sh`:
+### 1. Force a specific day (quickest fix)
 
-```bash
-#!/usr/bin/env bash
-set -e
-
-export DISPLAY=:0
-
-# Stop the screen from blanking / dimming
-xset s off
-xset -dpms
-xset s noblank
-
-# Hide the cursor after 0.1s of inactivity
-unclutter -idle 0.1 &
-
-# Clear Chromium's "didn't shut down cleanly" restore prompt
-PROFILE="$HOME/.config/chromium/Default/Preferences"
-sed -i 's/"exited_cleanly":false/"exited_cleanly":true/' "$PROFILE" 2>/dev/null || true
-sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/'   "$PROFILE" 2>/dev/null || true
-
-exec chromium-browser \
-  --kiosk \
-  --noerrdialogs \
-  --disable-infobars \
-  --disable-session-crashed-bubble \
-  --disable-restore-session-state \
-  --check-for-update-interval=31536000 \
-  --window-size=1280,720 \
-  --window-position=0,0 \
-  --autoplay-policy=no-user-gesture-required \
-  "file:///home/pi/mnj-lineup/index.html"
-```
-
-Make it executable:
+Stop the running kiosk and relaunch it pinned to a day. Run **on tty1** (so fbi
+draws to the screen you're looking at):
 
 ```bash
-chmod +x /home/pi/mnj-lineup/kiosk.sh
+# Kill whatever's driving the screen
+sudo pkill -f flicker.py ; sudo pkill fbi
+
+# Relaunch pinned to Day One (use 2 for Day Two). $1 wins over the date.
+sh /home/mos/static-websites/mnj-lineup/tools/kiosk.sh 1
 ```
 
-> On newer Raspberry Pi OS the binary may be `chromium` instead of
-> `chromium-browser` — adjust the script if so (`which chromium`).
-
-### 5. Create the systemd service
-
-`/etc/systemd/system/mnj-kiosk.service`:
-
-```ini
-[Unit]
-Description=MNJ 2026 Lineup Kiosk (Chromium fullscreen)
-After=graphical.target
-Wants=graphical.target
-
-[Service]
-User=pi
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=/home/pi/.Xauthority
-ExecStart=/home/pi/mnj-lineup/kiosk.sh
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=graphical.target
-```
-
-### 6. Enable and start
+Equivalently via the env var:
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable mnj-kiosk.service
-sudo systemctl start mnj-kiosk.service
+sudo pkill -f flicker.py ; sudo pkill fbi
+MNJ_DAY=2 sh /home/mos/static-websites/mnj-lineup/tools/kiosk.sh
 ```
 
-Reboot to confirm it comes up on its own:
+> If you ran the relaunch from a *different* console (e.g. tty2), pass the tty so
+> fbi targets tty1: `MNJ_TTY=/dev/tty1 MNJ_DAY=2 sh .../kiosk.sh` — then switch
+> to it with Ctrl+Alt+F1.
+
+To make the forced day **stick across reboots**, set it in the launcher:
 
 ```bash
+# Edit ~/.bash_profile and change the kiosk line to force a day, e.g.:
+#   exec env MNJ_DAY=2 /home/mos/static-websites/mnj-lineup/tools/kiosk.sh
+nano ~/.bash_profile
+```
+
+Remember to undo that after the festival, or it'll be stuck on that day.
+
+### 2. Force the frame set (HDMI ↔ PAL)
+
+Point `MNJ_FRAMES` at the directory you want:
+
+```bash
+sudo pkill -f flicker.py ; sudo pkill fbi
+
+# Show the PAL composite set (good for the CRT):
+MNJ_FRAMES=/home/mos/static-websites/mnj-lineup/kiosk_frames_pal \
+  sh /home/mos/static-websites/mnj-lineup/tools/kiosk.sh
+
+# ...or combine with a forced day:
+MNJ_FRAMES=/home/mos/static-websites/mnj-lineup/kiosk_frames_pal MNJ_DAY=2 \
+  sh /home/mos/static-websites/mnj-lineup/tools/kiosk.sh
+```
+
+To make PAL the default, repoint the symlink the launcher uses:
+
+```bash
+ln -sfn /home/mos/static-websites/mnj-lineup/kiosk_frames_pal /home/mos/kiosk_frames
+```
+
+(Point it back at `.../kiosk_frames` to return to the HDMI set.)
+
+### 3. Show a single image with no kiosk logic (last resort)
+
+If `kiosk.sh` itself is misbehaving, you can drive `fbi` directly — e.g. to put
+Day Two on screen immediately:
+
+```bash
+sudo pkill -f flicker.py ; sudo pkill fbi
+fbi -d /dev/fb0 -T 1 -a --noverbose \
+  /home/mos/static-websites/mnj-lineup/kiosk_frames/day2/frame*.png
+```
+
+(Swap `kiosk_frames` → `kiosk_frames_pal` for the CRT set, `day2` → `day1` for
+the other night. This loops the frames but without the fast `flicker.py` blink.)
+
+### 4. Fix the clock so auto-pick works
+
+The board has no RTC battery, so an offline cold boot can have the wrong date.
+If you can get it online briefly (phone hotspot), let it NTP-sync, then a normal
+reboot will auto-pick correctly:
+
+```bash
+date                                  # check what the Pi thinks it is
+sudo systemctl restart systemd-timesyncd   # re-sync if online
 sudo reboot
 ```
 
-### Useful commands
-
-```bash
-# Check status / logs
-systemctl status mnj-kiosk.service
-journalctl -u mnj-kiosk.service -f
-
-# Restart after editing files or the script
-sudo systemctl restart mnj-kiosk.service
-
-# Disable kiosk (back to normal desktop)
-sudo systemctl disable --now mnj-kiosk.service
-```
+If you can't get online, just force the day with recipe **1** — that's the
+reliable path at the venue.
 
 ### Festival-day checklist
 
-- ✅ Pi clock is correct (`date`) — the day auto-picks from it.
-  Set timezone via `sudo raspi-config` → Localisation → Timezone.
-- ✅ CRT set to a 1280×720 / 16:9 mode (check `/boot/config.txt` HDMI settings
-  if the picture is cropped or off-center).
-- ✅ Boot once before the event and verify the right night shows; if the clock
-  can't be trusted, plug in a keyboard and press `1` / `2`.
-- ✅ Screen blanking disabled (handled by the `xset` lines in `kiosk.sh`).
+- ✅ `git pull` the latest frames onto the Pi **while still online** (festival is
+  offline; the Pi can't render).
+- ✅ Pi clock is correct (`date`) — the day auto-picks from it. TZ is
+  Europe/Berlin; NTP-sync once on arrival via a hotspot.
+- ✅ Boot once and verify the right night shows. If the clock can't be trusted,
+  plug in a keyboard and use **Manual recovery → Force a specific day**.
+- ✅ Saturday daytime: power-cycle the TV during the break so it re-picks Day Two
+  (or force `MNJ_DAY=2`).
