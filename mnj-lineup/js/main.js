@@ -16,7 +16,7 @@ const LINEUPS = {
     slots: [
       { day: 'Saturday', start: '22:00', end: '00:00', dj: 'Elkï' },
       { day: 'Sunday',   start: '00:00', end: '03:00', dj: 'Panamoil' },
-      { day: 'Sunday',   start: '03:00', end: '06:00', dj: 'Jo' },
+      { day: 'Sunday',   start: '03:00', end: '06:00', dj: 'Djo' },
       { day: 'Sunday',   start: '06:00', end: '09:00', dj: 'Chami' },
       { day: 'Sunday',   start: '10:00', end: '13:00', dj: 'Minijob' },
     ],
