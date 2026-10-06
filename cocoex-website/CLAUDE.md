@@ -1,794 +1,471 @@
-# cocoex.xyz Website - Technical Documentation
+ti # cocoex.xyz Website
 
 ## Project Overview
-Static portfolio website for cocoex e.V. - a vibrant DAO blending art, blockchain, community and social impact. Core values: **usability**, **design**, **minimalism**.
+Static portfolio website for cocoex - a vibrant DAO blending art, blockchain, community and social impact. Core values: **usability**, **design**, **minimalism**.
 
-**Current Status:** Production-ready. All major features implemented and tested.
+## Site Structure
 
-## Site Architecture
+**Section 1 - Landing/Intro (`.intro`)**
+- Fixed-position WebGL animated canvas background (twinkling stars + cosmic noise)
+- Orbiting dots (white/black) converging animation
+- Center logo reveal with rotation
+- Constellation explosion into 7 colored dots with depth
+- Big bang pulse effect on explosion
+- Z-axis rotation during text section scroll
 
-**Total Scroll Height:** ~1720vh (17.2× viewport height)
+**Section 2 - Mission Text (`.text-section-wrapper`)**
+- Sticky-scroll text reveal with 350vh scroll height
+- Mission statement with highlighted key terms (community, art, impactful)
+- Sequential word highlighting (3 words total)
+- Constellation rotates 15° during highlights
+- Smooth fade to next sections
 
-### Section 1: Landing (Orbiting → Explosion)
-**Scroll Range:** 0-400vh (`.intro`)
-**Positioning:** Fixed overlay
+**Section 3 - Muse Portfolio (`.muse-section-wrapper`)**
+- 400vh scroll wrapper (300vh intro hold + 100vh crossfade)
+- Black intro page (fixed, z: 15) with Muse logo (white inverted) + description text
+- White orbiting content (fixed, z: 10) with pointer-events management
+- Fades in when entering viewport (top 80% → 40%)
+- Holds for 3 scrolls, then crossfades out over 1 scroll to reveal orbiting content
+- Orbiting layout: 7 muses in horizontal ellipse (240s continuous rotation)
+- Fades out when Comet section enters viewport
+- Properly reverses when scrolling up (intro fades back in)
+- Each muse has unique color, interactive popup modal on click
+- Animated WebGL gradient background (muse colors)
+- Layered over unified starfield canvas
 
-**Animation Phases:**
-- **Phase 1 (0-40%)**: Orbiting dots convergence
-  - White/black dots orbit center in ellipse pattern
-  - Logo scales 80px → 250px with 2 full rotations
-  - GSAP ScrollTrigger drives smooth interpolation
+**Section 4 - Comet Collab (`.comet-collab-wrapper`)**
+- 600vh scroll wrapper (300vh intro + 200vh movement + 100vh crossfade)
+- Black intro page (fixed, z: 15) with white Comet Collabs logo + description
+- Colored slider content (fixed, z: 10) with pointer-events management
+- Fades in when entering viewport (top 80% → 40%)
+- Holds for 3 scrolls, then logo moves down + text moves up over 2 scrolls
+- Crossfades to slideshow over 1 scroll
+- Properly reverses when scrolling up (logo/text movement reverses, intro fades back in)
+- Slider stays visible (fixed position) until natural page end (footer)
+- Bouncing DVD-style logo with spark particles on bounce (slower speed: 2px/1.5px)
+- Interactive 5-phase slider with image + text reels
+- Orbital navigation (prev/next buttons + dots)
+- WebGL gradient background (same as Muse)
 
-- **Phase 2 (30-50%)**: Transition text
-  - "art as infrastructure for change" appears at 76% orbit progress
-  - Fades in below logo, fades out before explosion
-
-- **Phase 3 (50-100%)**: Constellation explosion
-  - 7 colored dots explode from center
-  - Z-depth rendering (-0.5 to 0.6 range)
-  - Big bang pulse effect (dispersive wave shader uniform)
-  - Continuous 15° rotation
-
-**Key Features:**
-- WebGL starfield background (twinkling stars + simplex noise)
-- Hardware-accelerated transforms
-- Responsive logo sizing (clamp: 60-250px across devices)
-
-**Files:**
-- HTML: `index.html:27-52` (intro section)
-- CSS: `styles.css:156-341` (intro, logo, dots, constellation)
-- JS: `main.js:270-386` (WebGL shader), `main.js:408-664` (constellation), `main.js:867-913` (GSAP animations)
-
----
-
-### Section 2: Intro (Mission Text)
-**Scroll Range:** 400-550vh (`.text-section-wrapper`)
-**Positioning:** Sticky, full viewport height
-
-**Content:**
-- cocoex mission statement
-- comet collab ecosystem overview
-- Stardust and Horizon methods introduction
-- Muse framework teaser
-
-**Animation:**
-- Simple fade-in (opacity 0 → 1)
-- Italic styling on key words (static, no highlighting)
-- GSAP `scrub: true` for 60fps smoothness
-
-**Responsive Features:**
-- Fluid typography: `clamp(20px, 2.5vw, 36px)`
-- Text transforms to uppercase
-- Justified alignment for readability
-
-**Files:**
-- HTML: `index.html:55-61`
-- CSS: `styles.css:356-398`
-- JS: `main.js:914-951` (fade-in animation)
-
----
-
-### Section 3: Muse-1 (Intro Page)
-**Scroll Range:** 550-700vh (`.muse-intro-page`)
-**Positioning:** Fixed overlay with fade-in/out
-
-**Content:**
-- Black inverted Muse logo (centered)
-- Top text: Overview of Muse framework
-- Bottom text: Seven muses introduction with hollow "Muse" text effect
-
-**Animation:**
-- Fades in at 80% viewport entrance (550vh mark)
-- Holds for 150vh
-- Crossfades out during transition to orbiting layout
-
-**Text Styling:**
-- Uppercase transformation
-- Justified alignment
-- `.highlight-muse`: Hollow letter effect (transparent fill, white stroke)
-
-**Files:**
-- HTML: `index.html:73-78`
-- CSS: `styles.css:641-737` (intro page), `styles.css:733-737` (highlight effect)
-- JS: `main.js:979-1000` (fade-in animation)
-
----
-
-### Section 4: Muse-2 (Orbiting Portfolio)
-**Scroll Range:** 700-820vh (`.white-section-content`, `.muse-section`)
-**Positioning:** Sticky content
-
-**Scroll Breakdown:**
-- **0-120vh**: Crossfade from intro page (smooth opacity blend)
-- **120vh+**: Active orbiting layout with continuous rotation
-
-**The Seven Muses:**
-| Name | Color | Description |
-|------|-------|-------------|
-| **Lunes** | `#5783A6` | Mystery and intuition |
-| **Ares** | `#D54D2E` | Passion and courage |
-| **Rabu** | `#8CB07F` | Communication and connection |
-| **Thunor** | `#F8D86A` | Thunder and strength |
-| **Shukra** | `#5E47A1` | Beauty and harmony |
-| **Dosei** | `#7F49A2` | Wisdom and structure |
-| **Solis** | `#D48348` | Warmth and vitality |
-
-**Orbit Behavior (Adaptive Ellipse):**
-- **Mobile (≤768px)**: Vertical ellipse - 1.6x taller than wide
-- **Tablet (768-1024px)**: Slightly vertical - 1.4x taller than wide
-- **Desktop (>1024px)**: Horizontal ellipse - 1.8x wider than tall
-- **Rotation**: 240 seconds per complete cycle
-
-**Interactive Features:**
-- **Modal Popup**: Click muse image or title
-  - Colored aura effects (unique per muse color)
-  - Floating particle animations (12 particles)
-  - GSAP-driven entrance/exit
-  - Close: Escape key, click outside, or X button
-
-- **Keyboard Navigation**: Tab through muses, Enter to open, Escape to close
-
-**Visual Effects:**
-- WebGL animated gradient (7-color simplex noise blend)
-- Unified starfield canvas (shared with Comet section)
-- Hardware-accelerated rotation with ellipse mathematics
-
-**Files:**
-- HTML: `index.html:80-176` (orbiting section + popup)
-- CSS: `styles.css:739-869` (orbiting layout), `styles.css:870-1052` (popup modal)
-- JS: `main.js:1003-1039` (crossfade animation), `main.js:1148-1289` (gradient), `main.js:1521-1719` (popup), `main.js:1724-1839` (orbit rotation)
-
----
-
-### Section 5: Comet-collab-1 (Intro Page)
-**Scroll Range:** 820-1370vh (`.comet-collab-intro`)
-**Positioning:** Sticky with descending logo animation
-
-**Content:**
-- White Comet Collabs logo
-- Stardust and Horizon methods description
-- Uppercase, justified text
-
-**Animation Breakdown:**
-- **0-180vh**: Intro page hold (static)
-- **180-460vh**: Logo descent animation (280vh smooth transition)
-  - Logo moves from center → bottom
-  - Text content moves up
-  - Fully reversible on scroll up
-- **460-610vh**: Bottom hold (150vh pause)
-  - Logo remains at bottom position
-  - Gives users time to read content
-  - Smooth transition before crossfade
-
-**Shine Animation:**
-- **Scroll down** (entering from text section): Stardust shines → 1s delay → Horizon shines
-- **Scroll back** (from comet-collab-2): Horizon shines → 1s delay → Stardust shines
-- Each shine: 1.6s duration with glow effect (drop-shadow + stroke width increase)
-- Triggers every time section enters viewport in either direction
-
-**Methods Explained:**
-- **Stardust**: Artists select a cause, create work, launch fundraising campaign. Funds split between artist and organization.
-- **Horizon**: Future Lab where communities design their futures through 4 steps (Critique → Realisation), transforming vision into art and change.
-
-**Visual Features:**
-- WebGL gradient background (`.comet-collab-background-canvas` at z-index 1)
-- Unified starfield beneath
-- Responsive logo: `clamp(100px, 15vw, 182px)`
-- Hollow letter styling on method names (transparent fill, white stroke)
-- Sequential shine animation with glow effect
-
-**Files:**
-- HTML: `index.html:190` (shine-word spans with data attributes)
-- CSS: `styles.css:416-490` (intro section), `styles.css:492-520` (shine animation), `styles.css:571-580` (gradient canvas)
-- JS: `main.js:1042-1078` (intro + logo animation), `main.js:1080-1090` (shine trigger forward), `main.js:1102-1105` (shine trigger reverse), `main.js:1389-1516` (gradient background), `main.js:1962-2009` (shine animation function)
-
----
-
-### Section 6: Comet-collab-2 (Connected Images)
-**Scroll Range:** 1370-1720vh (`.comet-collab-connected-content`)
-**Positioning:** Sticky content
-
-**Animation:**
-- **610-730vh**: Crossfade from intro (120vh transition, opacity 0 → 1)
-- **730vh+**: Static display of 5 process images
-- Images arranged in flex layout with white connection lines (canvas overlay)
-
-**Content:**
-- 5 connected process images
-- Visual representation of Stardust/Horizon methodology
-- Responsive image sizing: `clamp(120px, 20vw, 250px)` desktop, smaller on mobile
-
-**Visual Features:**
-- Same WebGL gradient as intro (continuous visual flow)
-- Unified starfield background
-- White connection lines between images (`.comet-connection-canvas`)
-- Hover scale transform on images (1.05x)
-
-**Files:**
-- HTML: `index.html:194-219`
-- CSS: `styles.css:492-569` (connected images layout)
-- JS: `main.js:1080-1103` (crossfade animation), `main.js:1841-1909` (connection lines)
-
----
-
-### Footer
-**Positioning:** Fixed, revealed at comet section end
-**Trigger:** When connected images scroll into view
-
-**Contents:**
-- **Social Links**: Telegram, Instagram, LinkedIn
-  - 52px touch targets (accessibility compliant)
-  - Hover scale transform
-  - External links with `rel="noopener noreferrer"`
-
-- **cocoex Text Logo**: 172px width, scales on hover
-
-**Files:**
-- HTML: `index.html:222-242`
-- CSS: `styles.css:1026-1091`
-- JS: `main.js:954-976` (reveal animation)
-
----
+**Footer** - Fixed position, revealed at end of Comet section
+- Social links (Telegram, Instagram, LinkedIn)
+- Cocoex text logo
 
 ## DOM Reference Guide
 
-### Communication Best Practices
+### Identifying Sections for Changes
 
-When requesting changes, use **visual description + DOM selector + line reference** for precision.
+When requesting changes, the most effective approach combines **visual description + DOM selector** for clarity and precision.
 
-**Examples:**
-```
-❌ Poor:  "The icons at the bottom"
-✅ Good:  "The footer with Instagram, Telegram, LinkedIn icons"
-✅ Best:  "The .social-links footer (styles.css:1029, index.html:223)"
-```
+**Primary Identifiers (Most Reliable):**
+- CSS Classes & IDs: `.intro`, `.text-section-wrapper`, `.muse-section-wrapper`, `.comet-collab-wrapper`
+- Canvas IDs: `#bg-canvas`, `#constellation-canvas`, `#unified-starfield-canvas`, `#muse-background-canvas`, `#comet-collab-background-canvas`
+- Component IDs: `#muse-section`, `#comet-collab-section`, `#comet-collab-bouncing-logo`
+- HTML hierarchy: parent-child relationships
+- ARIA labels: `aria-label="Muse portfolio"`, `aria-label="Comet collab phases showcase"`
 
-### Quick Reference Table
+**Effective Communication Patterns:**
 
-| Element | Selector | CSS Lines | JS Lines | HTML Lines |
-|---------|----------|-----------|----------|------------|
-| Intro starfield | `#bg-canvas` | 139-180 | 270-386 | 28 |
-| Orbiting dots | `.orbit-dot` | 182-257 | 1083-1142 | 32-33 |
-| Logo rotation | `#intro-logo` | 182-257 | 772-793 | 37 |
-| Transition text | `#transition-text` | 287-313 | 891-913 | 44-46 |
-| Constellation canvas | `#constellation-canvas` | 315-326 | 449-664 | 49 |
-| Text reveal | `.reveal-text` | 342-380 | 936-951 | 58 |
-| Muse intro page | `.muse-intro-page` | 1093-1125 | 914-976 | 73-78 |
-| Muse gradient | `#muse-background-canvas` | - | 1148-1289 | 85 |
-| Unified starfield | `#unified-starfield-canvas` | 329-339 | 1294-1384 | 64 |
-| Orbiting muses | `.muse-orbit-item` | 1169-1283 | 1724-1839 | 95-171 |
-| Muse popup | `.muse-popup` | 1285-1466 | 1521-1719 | 245-260 |
-| Comet intro | `.comet-collab-intro` | 379-517 | 979-1078 | 181-191 |
-| Connected images | `.comet-collab-connected-content` | 519-786 | - | 194-219 |
-| Comet gradient | `#comet-collab-background-canvas` | - | 1389-1516 | 196 |
-| Footer social links | `.social-links` | 1026-1068 | 894-911 | 223-239 |
-| Footer logo | `.footer-logo` | 1070-1091 | 894-911 | 242 |
+✅ **Good:** "The social media icons at the bottom"
+✅ **Better:** "The footer with Instagram, Telegram, LinkedIn icons"
+✅ **Best:** "The `.social-links` footer at the bottom of `.white-section`"
 
-### CSS Organization (styles.css - 1729 lines total)
+**Context Types That Help:**
+- **Visual/Positional:** "The orbiting dots in the intro"
+- **Functional:** "The popup that appears when clicking muse names"
+- **Scroll Position:** "After the text section but before the white background"
+- **Timing:** "The animation that plays during the first scroll"
 
-| Lines | Section | Key Classes |
-|-------|---------|-------------|
-| 1-40 | Scrollbar | Firefox + Webkit thin scrollbar |
-| 42-77 | CSS Variables | `:root`, typography scale, spacing |
-| 79-137 | Reset & Base | Universal reset, `prefers-reduced-motion` |
-| 139-180 | Intro Canvas | `.intro`, `.intro-canvas`, `.intro-content` |
-| 182-257 | Logo & Dots | `.logo-container`, `.orbit-dot`, `.final-dot` |
-| 259-285 | Final Dot | Merged dot state |
-| 287-313 | Transition Text | Appears at 76% orbit |
-| 315-326 | Constellation | Explosion canvas |
-| 329-339 | Unified Starfield | Shared Muse/Comet background |
-| 342-380 | Text Section | `.text-section-wrapper`, `.reveal-text` |
-| 363-377 | White Section | Container for Muse + Comet |
-| 379-517 | Comet Intro | Logo animation, methods text |
-| 519-786 | Connected Images | 5 process images layout |
-| 788-892 | Connection Canvas | Lines between images (future) |
-| 1026-1091 | Footer | Social links, logo |
-| 1093-1166 | Muse Wrapper | Intro page, sticky content |
-| 1169-1283 | Muse Orbiting | Ellipse layout, center logo |
-| 1285-1466 | Muse Popup | Modal, particles, aura effects |
-| 1468-1683 | Responsive | Tablet → Mobile → Small → Large breakpoints |
-| 1686-1728 | Utilities | `.visually-hidden`, print styles |
+### Section Reference Map
 
-### JavaScript Module Reference (main.js - 2617 lines total)
+| Visual Description | CSS/DOM Reference | JS Module (if applicable) | Function/Area |
+|-------------------|------------------|-----------|----------------|
+| Intro WebGL background | `#bg-canvas` | Main render loop | render() + updatePositions() |
+| Orbiting dots | `.orbit-dot-white`, `.orbit-dot-black` | updateOrbitPositions | GSAP scroll-driven |
+| Logo rotation | `.logo-container`, `#intro-logo` | orbitState | GSAP timeline (phase 1) |
+| Constellation explosion | `#constellation-canvas` | updateFireworkDots | Phase 3 (40%-100%) |
+| Big bang pulse | `u_pulse` uniform | WebGL shader | Triggered at constellation start |
+| Constellation rotation | constellationRotation | updateFireworkDots | Rotates during text highlights |
+| Mission text highlights | `.text-section-wrapper`, `.reveal-text` | GSAP ScrollTrigger | 3 word highlights |
+| Muse intro page | `.muse-intro-page` | GSAP ScrollTrigger | 200vh hold (2 scrolls), 100vh crossfade |
+| Muse gradient background | `#muse-background-canvas` | MuseBackground module | Animated gradient shader |
+| Unified starfield | `#unified-starfield-canvas` | UnifiedStarfield module | Twinkling stars (Muse + Comet) |
+| Orbiting muses | `.muse-orbit-container`, `.muse-orbit-item` | MuseScroll module | 240s rotation, elliptical orbit |
+| Muse popup modal | `.muse-popup`, `.muse-popup-content` | MusePopup module | Click image/title to open |
+| Comet intro page | `.comet-collab-intro` | GSAP ScrollTrigger | 100vh hold, 200vh logo descent + text up, 100vh crossfade |
+| Comet slider | `.comet-collab-section` | CometCollabSlider module | 5-phase reel with navigation |
+| Bouncing logo | `#comet-collab-bouncing-logo` | CometCollabSlider | DVD-style bounce (velocity: 2, 1.5) with sparks |
+| Comet background | `#comet-collab-background-canvas` | CometCollabBackground | Same gradient as Muse |
+| Footer (social + logo) | `.social-links`, `.footer-logo` | GSAP ScrollTrigger | Reveals at comet section end |
 
-| Lines | Module | Purpose | Key Functions |
-|-------|--------|---------|---------------|
-| 1-14 | IIFE Wrapper | Scope isolation | Encapsulates all code |
-| 16-85 | GLSL_UTILS | Shared shaders | SIMPLEX_NOISE, STAR_FIELD |
-| 88-117 | SCROLL_TIMING | Centralized timing | All scroll ranges/durations |
-| 119-190 | CONFIG + DATA | Constants | DOT_COLORS, CONSTELLATION_REF |
-| 194-225 | DOM References | Cached selectors | All major DOM elements |
-| 227-268 | State Variables | Runtime state | pulseValue, constellationRotation |
-| 270-386 | WebGL Intro | Starfield shader | Twinkling stars, pulse effect |
-| 388-406 | Resize Handler | Debounced (150ms) | Canvas resizing, responsive |
-| 408-664 | Constellation | Explosion animation | Z-depth, rotation, particles |
-| 667-727 | Master Render Loop | Consolidated RAF | All WebGL canvases |
-| 732-865 | Event Listeners | Setup | Scroll, resize, load |
-| 867-1078 | GSAP Animations | ScrollTrigger | All section transitions |
-| 1083-1142 | updateOrbitPositions | Phase 1 orbit | White/black dot positioning |
-| 1148-1289 | MuseBackground | WebGL gradient | 7-color simplex blend |
-| 1294-1384 | UnifiedStarfield | Shared starfield | Muse + Comet background |
-| 1389-1516 | CometCollabBackground | Gradient (reused) | Same shader as Muse |
-| 1521-1719 | MusePopup | Modal module | Open, close, animations |
-| 1724-1839 | MuseScroll | Orbiting layout | 240s rotation, ellipse math |
-| 1841-2617 | CometCollabSlider | Bouncing logo system | (Not currently active in HTML) |
+### CSS Organization Reference
 
----
+- **Lines 1-35:** Variables (colors, fonts, spacing, z-index, transitions)
+- **Lines 37-95:** Reset & base styles (`prefers-reduced-motion` override)
+- **Lines 96-137:** Intro section (fixed positioning)
+- **Lines 139-251:** Logo, orbiting dots, final dot, constellation canvas
+- **Lines 253-265:** Unified starfield canvas (Muse + Comet background)
+- **Lines 267-318:** Text section with word highlights
+- **Lines 320-333:** White section wrapper
+- **Lines 335-791:** Comet Collab (wrapper, intro, slider, nav, reels, logo bounce)
+- **Lines 938-1003:** Social links & footer
+- **Lines 1005-1077:** Muse section wrapper & intro page
+- **Lines 1079-1194:** Muse orbiting layout
+- **Lines 1196-1290:** Muse popup modal
+- **Lines 1292-1521:** Responsive breakpoints (tablet → mobile → small mobile → large desktop)
+
+### JavaScript Module Reference
+
+- **GLSL_UTILS (16-85):** Shared GLSL shader utilities (simplex noise, star field)
+- **SCROLL_TIMING (88-115):** Centralized scroll timing constants (all sections)
+- **CONFIG (117-164):** Layout constants, sizes, timing, breakpoints
+- **DOT_COLORS (156-164):** 7 muse colors for constellation
+- **CONSTELLATION_REF (168-176):** Constellation dot positions with z-depth
+- **DOM Elements (191-205):** All element references
+- **STATE (212-222):** Animation state variables (pulseValue, constellationRotation, etc.)
+- **WebGL Background (270-386):** Intro starfield shader with big bang pulse
+- **Firework/Constellation (408-659):** Explosion with z-depth and rotation
+- **Render Loop (662-696):** Main animation frame
+- **GSAP Animations (732-1023):** Scroll-driven animations (all sections)
+- **updateOrbitPositions (1026-1087):** GSAP-driven orbit animation (phase 1)
+- **MuseBackground (1090-1249):** Muse gradient WebGL shader
+- **UnifiedStarfield (1251-1357):** Shared starfield for Muse + Comet sections
+- **CometCollabBackground (1359-1502):** Comet gradient (reuses Muse shader)
+- **MusePopup (1504-1626):** Modal interactions with GSAP animations
+- **MuseScroll (1628-1745):** Orbiting layout with continuous rotation
+- **CometCollabSlider (1747-2189):** Bouncing logo + 5-phase slider with drag support
+
+### Communication Examples
+
+**Positioning Changes:**
+> "Move the social links higher on the page"
+→ Target: `.social-links` in styles.css:942 and GSAP ScrollTrigger in main.js:827-839
+
+**Animation Adjustments:**
+> "Speed up the muse orbit rotation"
+→ Target: `MuseScroll.orbitSpeed` property (default: 0.00015 for 240s rotation)
+
+> "Change bounce speed of comet logo"
+→ Target: `CometCollabSlider.logoVelocityX` (default: 5) and `logoVelocityY` (default: 4)
+
+**Styling Updates:**
+> "Change the constellation dot colors"
+→ Target: `DOT_COLORS` constant in main.js:156-164
+
+> "Adjust muse gradient colors"
+→ Target: `MuseBackground.colors` array in main.js:1099-1107
+
+**Scroll Behavior:**
+> "Make the text section scroll slower"
+→ Target: `SCROLL_TIMING.TEXT_HIGHLIGHT_START` and `.text-section-wrapper` height in styles.css:271
+
+> "Adjust muse intro hold time"
+→ Target: `SCROLL_TIMING.MUSE_INTRO_HOLD` (default: 300vh) - Note: Update MUSE_TOTAL and CSS accordingly
+
+> "Adjust muse crossfade duration"
+→ Target: `SCROLL_TIMING.MUSE_CROSSFADE` (default: 100vh) - Transition from intro to orbiting content
+
+> "Change comet intro pause duration"
+→ Target: `SCROLL_TIMING.COMET_INTRO_PAUSE` (default: 300vh) - Note: Update COMET_MOVEMENT_START, COMET_CROSSFADE_START, COMET_STATIC_LOGO_START, COMET_TOTAL and CSS accordingly
+
+> "Adjust comet logo movement duration"
+→ Target: `SCROLL_TIMING.COMET_LOGO_MOVEMENT` (default: 200vh - 2 full scrolls)
+
+> "Adjust comet crossfade duration"
+→ Target: `SCROLL_TIMING.COMET_CROSSFADE_DURATION` (default: 100vh)
+
+> "Adjust bouncing logo speed"
+→ Target: `CometCollabSlider.logoVelocityX` (default: 2) and `logoVelocityY` (default: 1.5) in main.js:1779-1780
 
 ## Tech Stack
+- **Vanilla HTML/CSS/JS** - No framework overhead
+- **GSAP 3.12.5** - ScrollTrigger, MotionPathPlugin for scroll-driven animations
+- **WebGL** - Custom shaders for background effects
+- **Adobe Fonts (Typekit)** - Canela font family (Bold + Regular)
+- **Structure:** `index.html` | `css/styles.css` | `js/main.js` | `tools/coordinate-picker.html`
+- Modern CSS (Grid/Flexbox, custom properties, animations)
+- ES6+ JavaScript with IIFE pattern
 
-### Core Technologies
-- **HTML5**: Semantic markup, ARIA labels, 327 lines
-- **CSS3**: Custom properties, Grid, Flexbox, 1729 lines
-- **Vanilla JavaScript**: ES6+, IIFE pattern, 2617 lines
-- **GSAP 3.12.5**: ScrollTrigger for scroll-driven animations
-- **WebGL**: Custom GLSL shaders for visual effects
+## Typography System
 
-### Architecture Patterns
-- **IIFE Module Pattern**: Global scope isolation
-- **Master Render Loop**: Consolidates all WebGL animations (single RAF)
-- **Centralized Timing**: `SCROLL_TIMING` object for all scroll ranges
-- **Shared GLSL Utilities**: Simplex noise, star field rendering
-- **Passive Event Listeners**: Scroll and touch events
-- **Debounced Resize**: 150ms delay for stability
+**Font Family**: Canela (via Adobe Fonts)
+- Loaded via Typekit embed in `<head>` (replace `YOUR_KIT_ID` with actual project ID)
+- Fallback: Georgia, serif
 
-### Typography
-- **Font**: Canela (Bold 700, Regular 400) via Adobe Fonts (Typekit ID: `nvc8nhy`)
-- **Fallback**: Georgia, serif
-- **Fluid Scale**: H1 `clamp(24px, 3vw, 48px)`, H2 `clamp(14px, 1.5vw, 22px)`
-- **Responsive**: All typography uses `clamp()` for smooth scaling (320px → 4K+)
+**Type Scale** (CSS Custom Properties):
+- **H1 (Header 1)**: Canela Bold, 36px / 38px line-height
+  - Variables: `--font-h1-size`, `--font-h1-height`, `--font-h1-weight: 700`
+  - Used for: Mission text, comet phase titles, muse popup titles
+- **H2 (Header 2)**: Canela Regular, 18px / 21px line-height
+  - Variables: `--font-h2-size`, `--font-h2-height`, `--font-h2-weight: 400`
+  - Used for: Intro text, phase descriptions, muse names, popup descriptions
 
-### Responsive Design
-**Implementation:** Fluid design with minimal breakpoints
-**Documentation:** See `docs/responsive-design.md` for complete guide
+**Responsive Scaling**:
+- **Desktop (default)**: H1: 36/38px, H2: 18/21px
+- **Tablet (≤1024px)**: H1: 30/33px, H2: 16/19px
+- **Mobile (≤768px)**: H1: 22/26px, H2: 14/17px
+- **Small Mobile (≤480px)**: H1: 18/22px, H2: 12/15px
+- **Large Desktop (≥1440px)**: H1: 42/46px, H2: 20/24px
+- **XL Desktop (≥1920px)**: H1: 48/52px, H2: 22/26px
 
-**Key Features:**
-- **Fluid Typography**: All text sizes use `clamp()` for viewport-relative scaling
-- **Responsive Logos**: Logo sizes scale with CSS variables: `--intro-logo-size`, `--muse-logo-size`, `--muse-orbit-image-size`, `--comet-logo-size`
-- **Fluid Spacing**: Spacing system scales: `--spacing-xs` through `--spacing-xl`
-- **Adaptive Orbit**: Muse orbit changes from horizontal ellipse (desktop) to vertical ellipse (mobile)
-- **Touch Optimization**: 44px+ touch targets, touch-action optimization on mobile
-
-**Breakpoints (layout-only):**
-- Tablet (≤1024px): Touch optimization
-- Mobile (≤768px): Layout adjustments, vertical ellipse orbit
-- Small (≤480px): Fine-tuning for very small screens
-
-**Orbit Behavior:**
-- **Mobile (≤768px)**: Vertical ellipse (1.6x taller) - better portrait centering
-- **Tablet (768-1024px)**: Slightly vertical (1.4x taller) - transition
-- **Desktop (>1024px)**: Horizontal ellipse (1.8x wider) - wide sweep
-
-**Benefits:**
-- ~200 fewer CSS lines vs. fixed breakpoint approach
-- Smooth transitions without jumps between breakpoints
-- Future-proof for any screen size
-- Better performance with native browser scaling
-
-### WebGL Resources
-- **Active Canvases**: 4 total
-  1. Intro starfield (`#bg-canvas`)
-  2. Constellation explosion (`#constellation-canvas`)
-  3. Unified starfield (`#unified-starfield-canvas`)
-  4. Muse/Comet gradient (2 instances, same shader)
-
-- **Shader Programs**: 3 unique
-  1. Intro starfield + pulse
-  2. Unified starfield (shared)
-  3. Animated gradient (Muse + Comet)
-
-- **Memory Usage**: ~50-70MB (viewport-dependent)
-- **GPU Layers**: 15-25 composited
-
----
-
-## Performance Profile
-
-### Bundle Sizes (After March 2026 Cleanup)
-- **HTML**: 10.2KB uncompressed (~3.5KB gzipped)
-- **CSS**: 26KB uncompressed (~7KB gzipped) - **↓32% from 38.4KB**
-- **JavaScript**: 68KB uncompressed (~18KB gzipped) - **↓26% from 92KB**
-- **Total Core**: 104KB uncompressed (~28.5KB gzipped) - **↓26% overall**
-- **GSAP CDN**: 47KB (cached after first load)
-- **Images**: ~1MB total (lazy loaded)
-
-**Cleanup Impact:**
-- Removed 1,079 lines of unused code (CometCollabSlider module)
-- Reduced bundle by 36.6KB uncompressed (~9KB gzipped)
-- 0 functional changes, all features preserved
-- Improved maintainability and code clarity
-
-### Performance Benchmarks
-| Metric | Target | Notes |
-|--------|--------|-------|
-| Lighthouse Score | 95+ | All categories |
-| First Contentful Paint | <1.5s | 4G connection |
-| Largest Contentful Paint | <2.5s | 4G connection |
-| Time to Interactive | <3s | 4G connection |
-| Cumulative Layout Shift | <0.1 | Fixed positioning |
-| WebGL Rendering | 60fps desktop, 30fps mobile | Capped DPR on mobile |
-
-### Optimization Strategies
-
-**Animation:**
-- Hardware-accelerated properties only (`transform`, `opacity`)
-- GSAP ScrollTrigger with `scrub: true` (60fps interpolation)
-- Extended scroll durations (100vh+ per animation)
-- `will-change` hints on animated elements
-- Z-index layering minimizes repaints
-
-**WebGL:**
-- Shared GLSL utilities reduce duplication (~150 lines saved)
-- Cached program state (minimizes GPU context switches)
-- Mobile DPR capped at 2x (33% pixel reduction on 3x devices)
-- Early exit in shader star generation
-- Master render loop consolidates all animations
-
-**Loading:**
-- Passive event listeners (scroll, touch, resize)
-- Debounced resize handler (150ms)
-- Centralized `SCROLL_TIMING` prevents cascading changes
-- Big bang pulse uses single uniform (no DOM manipulation)
-
-### Known Limitations
-- **Battery**: Extended mobile viewing drains battery (WebGL rendering)
-- **Low-End**: May drop below 30fps during constellation animation
-- **High DPI**: WebGL scales to device pixel ratio (higher memory)
-- **Safari**: Rare `backdrop-filter` glitch on rapid scroll
-- **DevTools**: ~30% WebGL performance reduction when open
-
----
+All typography scales automatically via CSS variables in media queries.
 
 ## Design Principles
 
-### Minimalism
-- Question every element
-- White space is a feature
-- Less code = faster load
-- Remove over-engineering
+### Minimalism First
+Remove before adding. Question every element. White space is a feature. Less code = faster load = better UX.
 
-### Fluid Performance
-- 60fps scroll animations (GSAP `scrub: true`)
-- Hardware-accelerated properties only
-- Debounced resize: 150ms
-- Touch targets: min 44px (52px social icons)
-- Responsive breakpoints: 480, 768, 1024, 1440, 1920px
+### Fluid UI
+- Smooth transitions and animations (60fps target)
+- Responsive breakpoints: 480px, 768px, 1024px, 1440px, 1920px
+- Hardware-accelerated animations (`transform`, `opacity`, `filter`)
+- Touch-friendly targets (min 44px)
+- Debounced resize handlers
+
+### Performance Budget
+- **First Contentful Paint:** <1.5s
+- **Time to Interactive:** <3s
+- **Lighthouse score:** 95+
+- Optimize images (consider WebP, lazy load if needed)
+- Inline critical CSS, defer non-critical
+- No layout shifts (CLS < 0.1)
+- `will-change` for animated elements
 
 ### Accessibility
-- Semantic HTML5 elements
-- ARIA labels on decorative/interactive elements
-- Keyboard navigation (Tab, Escape)
-- Focus visible styles (2px outline + 2px offset)
-- WCAG AA color contrast
-- `prefers-reduced-motion` disables animations + particles
+- Semantic HTML5 elements (`<section>`, `<article>`, `<footer>`)
+- ARIA labels for decorative and interactive elements
+- Keyboard navigation (Tab, Escape for modal)
+- Focus visible styles (outline + outline-offset)
+- Color contrast WCAG AA minimum
+- `prefers-reduced-motion` support
 - Screen reader friendly
 
-### Performance Targets
-| Metric | Target |
-|--------|--------|
-| FCP | <1.5s |
-| LCP | <2.5s |
-| TTI | <3s |
-| CLS | <0.1 |
-| Lighthouse | 95+ |
+## Frontend Standards
 
----
+**CSS:**
+- CSS custom properties for theming and typography (`:root`)
+- Responsive typography via CSS variables (automatic scaling)
+- Mobile-first media queries
+- Organized by section with header comments
+- Avoid `!important` (only exception: reduced motion override)
+- Hardware acceleration: `transform: translateZ(0)`
 
-## Code Standards
+**JavaScript:**
+- IIFE pattern for encapsulation
+- Module organization: CONFIG → DOM → STATE → FUNCTIONS → INIT
+- Event delegation where applicable
+- Debounced scroll/resize handlers
+- Error handling for WebGL fallback
+- Passive event listeners for performance
+- No dependencies except GSAP
 
-### CSS Best Practices
-✅ **Do:**
-- CSS custom properties in `:root`
-- Mobile-first responsive design
-- Section-based organization with comments
-- Hardware acceleration via `transform`/`opacity`
-- `window.getComputedStyle()` for debugging
-
-❌ **Don't:**
-- Use `!important` (exceptions: specificity conflicts, reduced motion)
-- Hardcode values that should be variables
-- Use floats for layout (Grid/Flexbox instead)
-
-### JavaScript Best Practices
-✅ **Do:**
-- IIFE pattern for scope isolation
-- Module structure: CONSTANTS → DOM → STATE → UTILS → MODULES → INIT
-- Centralize timing in `SCROLL_TIMING`
-- Share GLSL code via `GLSL_UTILS`
-- Debounce resize, use passive listeners
-- Consolidate animations in master render loop
-
-❌ **Don't:**
-- Pollute global scope
-- Duplicate timing constants
-- Create multiple render loops
-- Use synchronous event listeners
-
-### HTML Best Practices
-✅ **Do:**
-- Use semantic HTML5 elements
-- W3C valid markup
-- Add SEO meta tags
-- Use `rel="noopener noreferrer"` on external links
+**HTML:**
+- Semantic elements over divs
+- Valid W3C markup
+- Meta tags for SEO + Open Graph
+- `rel="noopener noreferrer"` on external links
 - Descriptive `alt` text on images
 - `aria-hidden="true"` on decorative elements
 
-❌ **Don't:**
-- Use div soup (meaningless containers)
-- Skip ARIA labels
-- Forget mobile viewport meta tag
+## Code Organization
 
----
-
-## Scroll Timing Reference
-
-All timing centralized in `SCROLL_TIMING` object (main.js:88-117):
-
-```javascript
-// Intro section (400vh total)
-INTRO_TOTAL: 400
-INTRO_PHASE1_END: 0.40    // 40% - orbit ends
-INTRO_PHASE2_TEXT: 0.50   // 50% - transition text
-INTRO_PHASE3_START: 0.50  // 50% - explosion starts
-
-// Text section (150vh total)
-TEXT_SECTION_HEIGHT: 150
-
-// Muse section (270vh total)
-MUSE_INTRO_HOLD: 150      // Intro page hold
-MUSE_CROSSFADE: 120       // Crossfade duration
-MUSE_TOTAL: 270
-
-// Comet section (750vh total)
-COMET_INTRO_PAUSE: 120         // Intro hold
-COMET_LOGO_MOVEMENT: 280       // Logo descent
-COMET_CROSSFADE_DURATION: 120  // Crossfade
-COMET_TOTAL: 750               // Total wrapper height
+**CSS Structure:**
+```
+1. Custom Properties (variables)
+2. Reset & Base Styles
+3. Layout - Scroll Container
+4. Intro Section
+5. Logo & Orbiting Dots
+6. Constellation Canvas
+7. Text Section
+8. White Section (Muse)
+9. Muse Opening Slide
+10. Muse Orbiting Layout
+11. Muse Popup Modal
+12. Social Links & Footer
+13. Responsive (Tablet → Mobile → Small Mobile → Large Desktop)
+14. Utility Classes
+15. Print Styles
+16. Reduced Motion Override
 ```
 
-**Adjustment Guidelines:**
-- Minimum 100vh per scroll-driven animation for 60fps smoothness
-- Crossfades should be 100-120vh for perceptible transitions
-- Intro holds should be 100-150vh to avoid rushed feeling
-
----
-
-## Debugging & Troubleshooting
-
-### Common Issues
-
-**1. Canvas Flickering**
-- **Cause**: Double transformation (manual rotation + CSS transform)
-- **Fix**: Store unrotated positions, let CSS handle rotation
-- **Always**: Use `ctx.save()` and `ctx.restore()` for clean state
-
-**2. CSS Not Applying**
-- **Cause**: Specificity conflicts
-- **Debug**: `window.getComputedStyle(element).propertyName`
-- **Fix**: Use `!important` sparingly for overrides
-
-**3. Scroll Position Reads 0**
-- **Cause**: Browser differences in scroll properties
-- **Fix**: Multiple fallback sources with OR operator
-```javascript
-const scrollY = window.scrollY || window.pageYOffset ||
-                document.documentElement.scrollTop || 0;
+**JavaScript Structure:**
+```
+1. IIFE Wrapper
+2. GSAP Plugin Registration
+3. Configuration Constants
+4. DOM Element References
+5. State Variables
+6. Utility Functions
+7. Easing Functions
+8. WebGL Shader Setup
+9. Resize Handler
+10. Firework/Constellation Logic
+11. Position Updates (scroll-driven)
+12. Animation Loop
+13. Event Listeners
+14. GSAP ScrollTrigger Animations
+15. Muse Opening Slide Module
+16. Muse Background Module (WebGL)
+17. Muse Popup Module
+18. Muse Scroll Module (orbiting)
+19. Initialization
 ```
 
-**4. WebGL Performance Drops**
-- **Cause**: Redundant `gl.useProgram()` calls
-- **Fix**: Cache last active program, only switch when necessary
-- **Mobile**: Cap DPR at 2x (`Math.min(window.devicePixelRatio, 2)`)
+## Performance Characteristics
 
-**5. Animations Too Fast/Jerky**
-- **Cause**: Scroll distances too short for 60fps interpolation
-- **Fix**: Increase values in `SCROLL_TIMING` (min 100vh per phase)
+### Bundle Composition
+- **HTML**: 10.2KB (gzipped: ~3.5KB)
+- **CSS**: 21.4KB (gzipped: ~5.2KB)
+- **JavaScript**: 37.8KB (gzipped: ~11.3KB)
+- **Total Core**: 69.4KB (gzipped: ~20KB)
+- **GSAP CDN**: 47KB (cached after first visit)
 
-### Debug Logging Pattern
+### WebGL Resources
+- **Active Canvases**: 4 simultaneous (intro bg, unified starfield, muse gradient, comet gradient)
+- **Shader Programs**: 4 compiled programs (intro, starfield, muse/comet gradient shared)
+- **Memory Usage**: ~50-70MB (varies by viewport size)
+- **GPU Layers**: 15-25 composited layers (hardware accelerated)
+- **Shared GLSL**: Simplex noise + star field utilities (~150 lines saved via reuse)
 
-```javascript
-// Scroll position with multiple sources
-const scrollY = window.scrollY || window.pageYOffset ||
-                document.documentElement.scrollTop || 0;
-const vh = (scrollY / window.innerHeight).toFixed(2);
-console.log(`[${vh}vh | ${scrollY}px]`);
+### Animation Performance
+- **RequestAnimationFrame Loops**: 5 independent loops (intro, muse bg, unified starfield, comet bg, muse orbiting)
+- **Additional Loops**: 1 conditional (bouncing logo when active)
+- **Target FPS**: 60fps desktop, 30fps mobile
+- **Scroll Events**: Handled by GSAP ScrollTrigger (optimized)
+- **Resize Events**: Debounced to 150ms
+- **GSAP ScrollTrigger**: ~60fps interpolation with `scrub: true`
 
-// CSS computed styles
-const computed = window.getComputedStyle(element);
-console.log({
-  color: computed.color,
-  opacity: computed.opacity
-});
+### Scroll Timing Architecture
+Centralized timing constants (`SCROLL_TIMING` object) define all scroll-based animations:
+- **Intro Section**: 400vh total (orbit + constellation explosion)
+- **Text Section**: 350vh with sequential word highlights
+- **Muse Section**: 400vh (300vh intro hold + 100vh crossfade to orbiting content)
+- **Comet Section**: 600vh (300vh intro hold + 200vh logo/text movement + 100vh crossfade, then slider sticky until footer)
 
-// WebGL program switches (should be minimal)
-let programSwitchCount = 0;
-if (lastActiveProgram !== program) {
-  programSwitchCount++;
-  console.log(`Program switch #${programSwitchCount}`);
-}
-```
+All timing values are stored in constants for easy adjustment without cascading changes.
 
-### Performance Profiling Workflow
+### Optimization Strategies
+- Hardware-accelerated transforms (`transform`, `opacity` only)
+- GSAP ScrollTrigger replaces manual scroll listeners
+- Debounced resize handler (150ms) with passive listeners
+- Shared GLSL utilities (simplex noise + star field) reduce duplication by ~150 lines
+- Muse and Comet gradient shaders share identical code
+- `will-change` hints on animated elements (logo, dots, sections)
+- Z-index layering to minimize repaints (intro: 10, text: 20, muse/comet: 30+)
+- Centralized `SCROLL_TIMING` constants prevent cascading changes
+- WebGL context reuse across multiple canvases
+- Big bang pulse effect uses single uniform (no DOM manipulation)
 
-**Before Optimizing:**
-1. Open Chrome DevTools Performance tab
-2. Record 10 seconds of scrolling
-3. Analyze: FPS, long tasks, GPU memory, paint operations
-
-**Optimization Priorities:**
-1. Eliminate redundant work (cached programs)
-2. Reduce pixel count (DPR capping)
-3. Increase scroll distances (longer durations)
-4. Hardware acceleration (`transform`/`opacity` only)
-
-**After Optimizing:**
-1. Re-record same 10-second segment
-2. Compare metrics to baseline
-3. Verify visual quality unchanged
-4. Test on low-end device
-
----
+### Known Limitations
+- **Mobile WebGL**: 4+ active canvases can drain battery on extended viewing
+- **Low-end devices**: May drop below 30fps during starfield + gradient overlap
+- **Safari**: Occasional `backdrop-filter` glitch on rapid scroll (slider nav)
+- **Chrome DevTools**: Open reduces WebGL performance by ~30%
+- **Touch devices**: Bouncing logo drag may conflict with scroll on some browsers
+- **Total scroll height**: ~2350vh (Intro: 400 + Text: 350 + Muse: 400 + Comet: 600 + natural page end with footer)
 
 ## Development Workflow
 
-### Local Setup
+**Before commits:**
+1. Test across browsers (Chrome, Firefox, Safari)
+2. Validate responsive design (mobile → desktop)
+3. Check Lighthouse performance (target 95+)
+4. Validate HTML (W3C validator)
+5. Test keyboard navigation
+6. Verify `prefers-reduced-motion` behavior
 
-```bash
-# Start local server
-python3 -m http.server 8000
-# or
-npx serve . -l 8000
+**Testing:**
+- Manual cross-browser testing
+- Performance profiling (DevTools)
+- Accessibility audit (axe DevTools)
+- Visual regression for design changes
 
-# Visit http://localhost:8000
-```
+## Key Files
+- `index.html` - Main entry point with semantic HTML
+- `css/styles.css` - Complete styling with custom properties
+- `js/main.js` - Animation logic and GSAP integration
+- `tools/coordinate-picker.html` - Dev tool for constellation positioning
+- `README.md` - User-facing documentation
+- `CLAUDE.md` - This file (project context)
 
-### Development Tools
+## Development Tools
 
 **Coordinate Picker** (`tools/coordinate-picker.html`)
-- Interactive tool for constellation positioning
-- Click to save coordinates (normalized 0-1)
-- Keyboard: Z (undo), C (clear)
+- Interactive tool for positioning constellation dots
+- Click to save coordinates
+- Exports as normalized (0-1) values
+- Keyboard shortcuts: Z (undo), C (clear)
 
-**Browser DevTools:**
-- **Chrome**: Performance profiling, WebGL debugging
-- **Lighthouse**: Performance audits (target 95+)
-- **axe DevTools**: Accessibility testing
-- **W3C Validator**: HTML validation
+## Dependencies
 
-### Pre-Deployment Checklist
+External CDN libraries:
+- GSAP 3.12.5 (`gsap.min.js`)
+- ScrollTrigger plugin (`ScrollTrigger.min.js`)
+- MotionPathPlugin (`MotionPathPlugin.min.js`)
 
-- [ ] Cross-browser test (Chrome, Firefox, Safari, Edge)
-- [ ] Responsive validation (320px → 1920px+)
-- [ ] Lighthouse audit (95+ all categories)
-- [ ] HTML validation (W3C)
-- [ ] Keyboard navigation (Tab, Escape)
-- [ ] `prefers-reduced-motion` verification
-- [ ] Mobile device testing
-- [ ] Touch target testing (44px+)
-
----
-
-## Best Practices Summary
+## Always/Never
 
 **Always:**
 - Mobile-first responsive design
-- Profile before optimizing
-- Test on real devices
-- Use semantic HTML
-- Validate with Lighthouse (target 95+)
-- Hardware-accelerated properties only
-- Debounce resize/scroll handlers (150ms)
+- Profile performance before optimizing
+- Test in real devices when possible
+- Use semantic HTML over divs
 - Add `aria-hidden="true"` to decorative elements
-- Support `prefers-reduced-motion`
-- Test keyboard navigation
-- Use `ctx.save()`/`ctx.restore()` for canvas
-- Multiple fallback sources for scroll position
-- Cache WebGL program state
+- Use hardware-accelerated properties (`transform`, `opacity`)
+- Debounce resize/scroll handlers
+- Validate with Lighthouse before deploying
 
 **Never:**
 - Add frameworks for simple interactions
 - Sacrifice accessibility for aesthetics
-- Hardcode values in `SCROLL_TIMING`
-- Use animations without reduced motion support
+- Hardcode breakpoints without testing
+- Use animations without `prefers-reduced-motion` support
 - Deploy without Lighthouse audit
-- Use `!important` habitually (exceptions documented)
+- Use `!important` (except for reduced motion override)
 - Ignore keyboard navigation
-- Commit unused code
-- Apply both manual rotation and CSS transform
-- Assume single scroll source works cross-browser
+- Add unused code or dependencies
+
+## Current State (February 2026)
+
+**Implemented:**
+- ✅ Intro animation with orbiting dots, logo rotation, constellation explosion
+- ✅ Big bang pulse effect (subtle dispersive wave from center)
+- ✅ WebGL starfield background with twinkling stars (intro + unified)
+- ✅ Constellation with z-depth rendering and scroll-driven rotation
+- ✅ Scroll-driven mission text reveal with 3 sequential word highlights
+- ✅ Muse intro page with white inverted logo + crossfade transition
+- ✅ Orbiting muse layout with continuous 240s rotation (horizontal ellipse)
+- ✅ Interactive popup modals for muse details (click image or title)
+- ✅ WebGL animated gradient background for muse section
+- ✅ Comet intro page with descending logo animation
+- ✅ Comet slider with 5 phases (image + text reels)
+- ✅ Bouncing DVD-style logo with colored spark particles
+- ✅ Drag-and-throw bouncing logo interaction
+- ✅ Orbital slider navigation (prev/next buttons + dots)
+- ✅ Social links footer with hover/focus states (revealed at end)
+- ✅ Semantic HTML5 structure with ARIA labels
+- ✅ `prefers-reduced-motion` support (disables animations + sparks)
+- ✅ Keyboard navigation (Tab, Escape, Arrow keys)
+- ✅ Responsive design (mobile to 4K)
+
+**Performance Notes:**
+- WebGL fallback: Background animations disabled if WebGL unavailable
+- GSAP ScrollTrigger handles all scroll events (no manual scroll listeners)
+- Debounced resize handler: 150ms delay for performance
+- Passive event listeners on window resize
+- Hardware acceleration on all animated elements (`will-change`)
+- Z-index layering for proper stacking context (intro: 10, text: 20, muse/comet: 30+)
+- Shared GLSL shaders reduce code duplication
+- Centralized timing constants (`SCROLL_TIMING`) for easy adjustments
+
+**Key Interactive Features:**
+- Click muse images or titles to open detailed popup modals
+- Drag bouncing logo to throw it around (desktop + touch)
+- Use arrow keys to navigate comet slider phases
+- Press Escape to close muse popup modal
+- Slider dots are clickable for direct phase navigation
 
 ---
 
-## Implementation Status
-
-**Current Features (March 2026):**
-- ✅ Intro: Orbiting dots, logo rotation, constellation explosion
-- ✅ Transition text "art as infrastructure for change"
-- ✅ Big bang pulse effect (dispersive wave)
-- ✅ WebGL starfield backgrounds (intro + unified)
-- ✅ Simplified text reveal (fade-in only, no word highlighting)
-- ✅ Muse intro page with black inverted logo + 120vh crossfade
-- ✅ Orbiting muse layout (240s rotation, adaptive ellipse)
-- ✅ Interactive muse popup modals (colored aura, particles)
-- ✅ WebGL animated gradient (Muse/Comet sections)
-- ✅ Comet intro page with descending logo (280vh animation) + 150vh bottom hold
-- ✅ Shine animation on Stardust/Horizon words (direction-aware, 1.6s duration)
-- ✅ Connected images display (5 process images)
-- ✅ Footer reveal at page end (social icons + logo)
-- ✅ Full keyboard navigation support
-- ✅ `prefers-reduced-motion` disables animations + particles
-- ✅ Responsive design (320px → 4K+) with fluid typography
-
-**Recent Changes (March 2026):**
-- ✅ **Responsive Design Overhaul**
-  - Implemented fluid typography with `clamp()` throughout
-  - Created adaptive ellipse orbit (vertical mobile, horizontal desktop)
-  - Added comprehensive responsive design documentation (`docs/responsive-design.md`)
-  - Reduced CSS by ~200 lines through consolidation
-
-- ✅ **Text Styling Improvements**
-  - Added `.highlight-muse` hollow letter effect (transparent fill, white stroke)
-  - Made all text sections uppercase with justified alignment
-  - Ensured visual consistency across all sections
-
-- ✅ **Code Cleanup (1,079 lines removed)**
-  - Removed unused CometCollabSlider module (586 lines JS)
-  - Removed slider-related CSS (493 lines)
-  - Fixed canvas background CSS bug (restored essential `.comet-collab-background-canvas`)
-  - Updated static-web-dev skill with cleanup learnings
-  - Total reduction: 35KB uncompressed, 0 functional changes
-
-- ✅ **Documentation Updates**
-  - Restructured CLAUDE.md with new section naming (landing, intro, muse-1, muse-2, comet-collab-1, comet-collab-2)
-  - Added responsive design guide with troubleshooting
-  - Created comprehensive cleanup case study in skill
-  - Set debug logging to false for production
-
-- ✅ **Comet Section Enhancements (March 9, 2026)**
-  - Added 150vh bottom hold in comet-collab-1 after logo descent (better pacing)
-  - Implemented shine animation on Stardust and Horizon words (1.6s glow effect)
-  - Direction-aware animation: Stardust→Horizon (scroll down), Horizon→Stardust (scroll back)
-  - Sequential timing: 1 second delay between word animations
-  - Triggers every time section enters viewport in either direction
-  - Total scroll height increased: 1570vh → 1720vh
-
-**Known Technical Debt:**
-- Connection canvas for lines between images (visual enhancement, not critical)
-
-**Performance:**
-- Master render loop consolidates animations ✅
-- GSAP ScrollTrigger handles all scroll ✅
-- Debounced resize: 150ms ✅
-- Hardware acceleration: `will-change` hints ✅
-- Shared GLSL code reduces duplication ✅
-- Z-index layering minimizes repaints ✅
-- Fluid responsive design eliminates breakpoint jumps ✅
-
----
-
-## Key Files Reference
-
-| File | Lines | Purpose | Last Updated |
-|------|-------|---------|--------------|
-| `index.html` | 327 | Semantic HTML5 structure | March 9, 2026 |
-| `css/styles.css` | 1,174 | Styling with responsive design | March 9, 2026 |
-| `js/main.js` | 2,035 | Animation logic (GSAP + WebGL) | March 9, 2026 |
-| `docs/responsive-design.md` | 453 | Responsive implementation guide | March 9, 2026 |
-| `.claude/skills/static-web-dev/skill.md` | 929 | Dev skill with cleanup learnings | March 9, 2026 |
-| `tools/coordinate-picker.html` | - | Dev tool for constellation | Feb 24, 2026 |
-| `README.md` | - | User-facing documentation | March 9, 2026 |
-| `CLAUDE.md` | - | Project context (this file) | March 9, 2026 |
-
----
-
-**Last Updated:** March 9, 2026
-
-**Major Changes:**
-- ✅ Restructured section naming (landing, intro, muse-1, muse-2, comet-collab-1, comet-collab-2)
-- ✅ Implemented comprehensive responsive design with fluid typography
-- ✅ Added adaptive ellipse orbit (vertical mobile, horizontal desktop)
-- ✅ Removed 1,079 lines of unused code (26% bundle reduction)
-- ✅ Added responsive design documentation and cleanup case study
-- ✅ Set debug logging to false for production
-- ✅ Updated all file references and scroll ranges
-- ✅ 0 functional changes - all features preserved and working
+**Document Version**: February 2026 | **Word count**: ~2500 words
